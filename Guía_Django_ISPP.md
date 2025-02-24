@@ -2,6 +2,8 @@
 
 Esto es una guía que he hecho para que todos más o menos sigamos los mismos criterios básicos en cuanto de la estructura de los archivos y las rutas de la API. No soy para nada experto en Django. He echado un buen rato para estudiar cuáles eran las mejores opciones y creo el sistema que propongo ha quedado bastante lógico y robusto, pero cualquiera que tenga otra propuesta de lo que sea, que lo diga. Si preferís meter las URLS a mano en el urls.py en vez de usar el Django Rest Framework (DRF), decidlo; ambos tienen sus ventajas e inconvenientes. Si cualquiera de las cosas que haya dicho por aquí os parece una tontería o simplemente innecesario, decidlo también. Ni se os ocurra callaros.
 
+El enlace al repositorio con algunos ejemplos: https://github.com/rafcasceb/Guia_Django_ISPP.
+
 
 
 <br><br>
@@ -214,7 +216,7 @@ hotel_obj = room.hotel    # Acceso al objeto completo (puede hacer query extra s
 
 <br><br>
 
-## 4. Enlaces de interés
+## 5. Enlaces de interés
 
 Poned otros si queréis.
 
