@@ -22,7 +22,7 @@ Definiremos las entidades necesarias dentro.
 ###  1.3. Serializadores
 Usaremos `serializers.py`.
 
-Las llamadas a la API desde el frontend no devolverán tal cual los objetos (las instancias de las entidades), sino que los transformaremos a objetos JSON para que sea más cómodo trabajar con ellos. **TODOS los nombres de los objetos del JSON se escribirán en snake_case**. 
+Las llamadas a la API desde el frontend no devolverán tal cual los objetos (las instancias de las entidades), sino que los transformaremos a objetos JSON para que sea más cómodo trabajar con ellos. **TODOS los nombres de los objetos del JSON se escribirán en snake_case**. Cuando una entidad tenga relación con otra, como norma general en el JSON solo se escribirá el ID (que será su PK/FK en principio). Podrá haber alguna excepción con entidades auxiliares como Hotel con HotelImages que valgan únicamente para esto y no tengan su propio controlador.
 
 
 ###  1.4. Rutas
@@ -57,9 +57,13 @@ Lo más normal sería un solo servicio por `services.py`, pero en función de si
 
 
 ### 1.7. Pruebas
-Usaremos `/tests/test_models`, `/tests/test_service.py` y `/tests/test_views.py`.
+Usaremos `/tests/test_models.py`, `/tests/test_service.py` y `/tests/test_views.py`.
 
-En el primero probaremos los modelos; serán pruebas cortas y simples. En el segundo probaremos los servicios; estudiaremos todas las funcionalidades en detalle. En el tercero probaremos todo el flujo desde el controlador; cada uno de sus métodos desde una perspectiva más global. *Pruebas muy exhaustivas con mucha cobertura*. 
+En el primero probaremos los modelos; serán pruebas cortas y simples. Probaremos las validaciones más que nada. Probamos los valores más susceptibles a fallo solo y luego hacemos una instancia correcta.
+
+En el segundo probaremos los servicios; estudiaremos todas las funcionalidades en detalle. *Pruebas muy exhaustivas con mucha cobertura*.
+
+En el tercero probaremos todo el flujo desde el controlador; cada uno de sus métodos desde una perspectiva más global. *Pruebas muy exhaustivas con mucha cobertura*. 
 
 Estas son unas directrices muy vagas y los ejemplos muy básicos. Cualquiera que proponga usar algunas estrategias más completas y mejores, por supuesto que bienvenido sea. Es más, espero que se os ocurran mejores cosas una vez que empezemos a usar Pytest y estas tecnologías, aunque si no, está bien. Con cosas nuevas me refiero a algunas anotaciones, algún otro método de _fixture_ previo o cualquier cosa, o incluso cambiar la estrategia general de las pruebas del servicio y el controlador como las he definido.
 
