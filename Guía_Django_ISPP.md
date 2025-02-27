@@ -2,7 +2,7 @@
 
 Esto es una guía que he hecho para que todos más o menos sigamos los mismos criterios básicos en cuanto de la estructura de los archivos y las rutas de la API. No soy para nada experto en Django. He echado un buen rato para estudiar cuáles eran las mejores opciones y creo el sistema que propongo ha quedado bastante lógico y robusto, pero cualquiera que tenga otra propuesta de lo que sea, que lo diga. Si preferís meter las URLS a mano en el urls.py en vez de usar el Django Rest Framework (DRF), decidlo; ambos tienen sus ventajas e inconvenientes. Si cualquiera de las cosas que haya dicho por aquí os parece una tontería o simplemente innecesario, decidlo también. Ni se os ocurra callaros.
 
-El enlace al repositorio con algunos ejemplos: https://github.com/rafcasceb/Guia_Django_ISPP.
+El enlace al repositorio con algunos ejemplos: https://github.com/rafcasceb/Guia_Django_ISPP. Fijaos en cómo hacer la estructuras de las carpetas y los métodos, pero desde entonces hemos cambiado algunas cosas como el formato de las rutas por ejemplo.
 
 
 
@@ -83,12 +83,12 @@ Aquí están los métodos reservados de DRF para el Default Router:
 
 | Método en ViewSet                      | Método HTTP   | URL generada                      | URL name (para reverse) |
 |----------------------------------------|---------------|-----------------------------------|-------------------------|
-| list(self, request)                    | GET           | /api/hotels/ (lista todos)        | {basename}-list         |
-| create(self, request)                  | POST          | /api/hotels/ (crear)              | {basename}-list         |
-| retrieve(self, request, pk=None)       | GET           | /api/hotels/{id}/ (uno solo)      | {basename}-detail       |
-| update(self, request, pk=None)         | PUT           | /api/hotels/{id}/ (editar)        | {basename}-detail       |
-| partial_update(self, request, pk=None) | PATCH         | /api/hotels/{id}/ (editar parcial)| {basename}-detail       |
-| destroy(self, request, pk=None)        | DELETE        | /api/hotels/{id}/ (borrar)        | {basename}-detail       |
+| list(self, request)                    | GET           | /hotels/ (lista todos)        | {basename}-list         |
+| create(self, request)                  | POST          | /hotels/ (crear)              | {basename}-list         |
+| retrieve(self, request, pk=None)       | GET           | /hotels/{id}/ (uno solo)      | {basename}-detail       |
+| update(self, request, pk=None)         | PUT           | /hotels/{id}/ (editar)        | {basename}-detail       |
+| partial_update(self, request, pk=None) | PATCH         | /hotels/{id}/ (editar parcial)| {basename}-detail       |
+| destroy(self, request, pk=None)        | DELETE        | /hotels/{id}/ (borrar)        | {basename}-detail       |
 
 Algunos comparten el mismo URL name simplemente porque comparten la ruta. Ya cuando se utilice esa ruta con un método HTTP se redirigirá al método que corresponda. La función `reverse` de Django lo que hace es darnos la URL completa a partir del nombre de una "vista", que sería lo que nosotros llamamos método de un controlador.
 
@@ -101,14 +101,14 @@ Podemos definir nuevos métodos del controlador con nombres no reservados. Hay v
 #### Añadir _paths_
 ¿Queremos todas las ciudades? Tan solo necesitamos un nuevo _path_.
 ```python
-    @action(detail=False, methods=['get'], url_path="cities")  # GET /api/hotels/cities
+    @action(detail=False, methods=['get'], url_path="cities")  # GET /hotels/cities
     def get_all_cities(self, request):
         ...
 ```
 
 ¿Queremos un atributo de un hotel, el nombre por ejemplo? Dejamos primero que filtre por id (detail=True) y luego añadimos un nuevo _path_ a la ruta.
 ```python
-    @action(detail=True, methods=['get'], url_path="name")  # GET /api/hotels/{id}/name
+    @action(detail=True, methods=['get'], url_path="name")  # GET /hotels/{id}/name
     def get_name_by_hotel_id(self, request, pk=None):
         ...
 ```
@@ -116,7 +116,7 @@ Podemos definir nuevos métodos del controlador con nombres no reservados. Hay v
 #### _Path params_
 ¿Queremos un resumen de los hoteles de una ciudad (por decir algo)? Añadimos un nuevo _path_ a la ruta y recibimos un _path param_.
 ```python
-    @action(detail=False, methods=['get'], url_path="city-summary/(?P<city>[\w\s-]+)")  # GET /api/hotels/city-summary/{city}
+    @action(detail=False, methods=['get'], url_path="city-summary/(?P<city>[\w\s-]+)")  # GET /hotels/city-summary/{city}
     def get_summary_by_city(self, request, city=None):
         ...
 ```
@@ -124,7 +124,7 @@ Podemos definir nuevos métodos del controlador con nombres no reservados. Hay v
 #### _Query params_
 ¿Queremos filtrar los hoteles según ciertos parámetros? Usamos _query params_.
 ```python
-    @action(detail=False, methods=['get'])  # GET /api/hotels?name={name}&city={city}
+    @action(detail=False, methods=['get'])  # GET /hotels?name={name}&city={city}
     def filter_hotels(self, request):
         ...
 ```
@@ -135,10 +135,10 @@ Podemos definir nuevos métodos del controlador con nombres no reservados. Hay v
 ### 2.3. Cuidado con los solapamientos
 Mucho cuidado con los solapamientos de rutas, sobre todo con los _path params_. Vamos a ver un ejemplo. Si quisiéramos filtrar por nombre, utilizaríamos en principio un _query param_ `?name=nombre_que_sea`, pero vamos a poner un momento el ejemplo de que fuera con _path param_:
 
-Queremos un método que nos busque un hotel por nombre. No es uno de los métodos reservados, así que crearemos uno nuevo. En principio uno puede pensar en usar la ruta `/api/hotels/{name}`, sin embargo, se está pisando con la ruta del método reservado 'retrieve': `/api/hotels/{id}`. Django, en principio, no nos dejaría tener ambas rutas a la vez porque no las diferenciaría. Habría que optar, por tanto, por una nueva ruta única, algo como `/api/hotels/name/{name}`:
+Queremos un método que nos busque un hotel por nombre. No es uno de los métodos reservados, así que crearemos uno nuevo. En principio uno puede pensar en usar la ruta `/hotels/{name}`, sin embargo, se está pisando con la ruta del método reservado 'retrieve': `/hotels/{id}`. Django, en principio, no nos dejaría tener ambas rutas a la vez porque no las diferenciaría. Habría que optar, por tanto, por una nueva ruta única, algo como `/hotels/name/{name}`:
 
 ```python
-    @action(detail=False, methods=['get'], url_path="name/(?P<name>[^/.]+)")  # GET /api/hotels/name/{name}
+    @action(detail=False, methods=['get'], url_path="name/(?P<name>[^/.]+)")  # GET /hotels/name/{name}
     def get_hotel_by_name(self, request, name=None):
         ...
 ```
@@ -152,13 +152,13 @@ Utilizaremos el parámetro url_name del decorador `@action` para definir el URL 
 
 Para reverse de ruta con _path params_, usamos `kwargs`:
 ```python
-url = reverse('hotels-detail', kwargs={'pk': 1})  # Genera /api/hotels/1/
+url = reverse('hotels-detail', kwargs={'pk': 1})  # Genera /hotels/1/
 ```
 
 Para reverse de ruta con _query params_, los añadimos como cadena:
 ```python
-url = reverse('hotels-filter_hotels')  # /api/hotels/filter_hotelss/
-url_with_query_params = f"{url}?name=Ulises&city=Valencia" # /api/hotels/filter_hotelss/?name=Ulises&city=Valencia
+url = reverse('hotels-filter_hotels')  # /hotels/filter_hotelss/
+url_with_query_params = f"{url}?name=Ulises&city=Valencia" # /hotels/filter_hotelss/?name=Ulises&city=Valencia
 ```
 
 Los URL names de los métodos reservados ya se han comentado.

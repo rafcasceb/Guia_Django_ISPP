@@ -7,5 +7,5 @@ router = DefaultRouter()
 router.register(r'hotels', HotelViewSet, basename="hotels")  # las reverse urls se obtienen con "{basename}-{url_name}"
 
 urlpatterns = [
-    path('api/', include(router.urls)),
+    path('/', include(router.urls)),
 ]
