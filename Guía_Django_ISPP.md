@@ -1,76 +1,232 @@
 # Guía de Django para ISPP
 
+
+1. [Introducción]()
+
+
+
+
+1. [Introducción](#1-datos-fundamentales-del-equipo)  
+2. [Instalación, preparación y ejecución]()  
+    - [Instalación de repositorio y BD]()
+    - [Ejecución general]()
+    - [*Imports*]()
+    - [Migraciones]()
+    - [Ejecutar tests]()
+3. [Estructura]()
+    - [Estructura de carpetas]()
+    - [Funcionalidades y flujo de información]()
+4. [Modelos]()
+    - []()
+5. [Validaciones]()
+6. [Archivado]()
+7. [Permisos de roles]()
+8. [Serializadores]()
+9. [Enrutamiento]()
+10. [Controladores y servicios]()
+11. [Tests]()
+
+
+
+
+<br><br><br>
+
+## 1. Introducción
+
 Esto es una guía que he hecho para que todos más o menos sigamos los mismos criterios básicos en cuanto de la estructura de los archivos y las rutas de la API. No soy para nada experto en Django. He echado un buen rato para estudiar cuáles eran las mejores opciones y creo el sistema que propongo ha quedado bastante lógico y robusto, pero cualquiera que tenga otra propuesta de lo que sea, que lo diga. Si preferís meter las URLS a mano en el urls.py en vez de usar el Django Rest Framework (DRF), decidlo; ambos tienen sus ventajas e inconvenientes. Si cualquiera de las cosas que haya dicho por aquí os parece una tontería o simplemente innecesario, decidlo también. Ni se os ocurra callaros.
 
 El enlace al repositorio con algunos ejemplos: https://github.com/rafcasceb/Guia_Django_ISPP. Fijaos en cómo hacer la estructuras de las carpetas y los métodos, pero desde entonces hemos cambiado algunas cosas como el formato de las rutas por ejemplo.
 
 
 
-<br><br>
 
-## 1. Estructura y flujo de información
-### 1.1. Paquetes
-Haremos un paquete por concepto. Lo más normal es que cada entidad represente un concepto, sin embargo, en función de su relevancia y uso, ciertas entidades pueden pertenecer a otros paquetes que no sean suyos propios. A lo mejor necesitamos una entidad auxiliar que no va a recibir ninguna consulta, sino que es por definir con más comodidad un atributo de una entidad principal. No vamos a trabajar prácticamente nunca con la entidad auxiliar sino con la principal. En ese caso, pueden estar en el mismo paquete.
+<br><br><br>
 
+## 2. Instalación, preparación y ejecución
 
-### 1.2. Entidades
-Usaremos `models.py`.
+### 2.1. Instalación de repositorio y BD
+Para poder instalar la aplicación, seguir los pasos definidos en el documento [USAGE.md](https://github.com/LuisMelladoDiaz/Pawtel-ComparadorDeHotelesParaMascotas/blob/8a14a746e4555fda9609c1f78ac9b2fc6d27fba0/docs/USAGE.md) del repositorio.
 
-Definiremos las entidades necesarias dentro.
+Hay que crear un entorno virtual bajo el directorio `\backend`.
+```bash
+python -m venv venv             # crear
+venv\Scripts\activate           # activar (las barras hacia la izquierda)
+deactivate                      # desactivar
+```
 
-
-###  1.3. Serializadores
-Usaremos `serializers.py`.
-
-Las llamadas a la API desde el frontend no devolverán tal cual los objetos (las instancias de las entidades), sino que los transformaremos a objetos JSON para que sea más cómodo trabajar con ellos. **TODOS los nombres de los objetos del JSON se escribirán en snake_case**. Cuando una entidad tenga relación con otra, como norma general en el JSON solo se escribirá el ID (que será su PK/FK en principio). Podrá haber alguna excepción con entidades auxiliares como Hotel con HotelImages que valgan únicamente para esto y no tengan su propio controlador.
-
-
-###  1.4. Rutas
-Usaremos `urls.py`.
-
-Las llamadas a la API entran por aquí. Se relaciona una ruta base con su controlador correspondiente. Todas las rutas con esa ruta base serán redirigadas a ese controlador.
+Si la ejecución de scripts está deshabilitada en el sistema, probar con el comando:
+```bash
+Set-ExecutionPolicy -Scope Process -ExecutionPolicy Bypass
+```
 
 
-###  1.5. Controladores
-Usaremos `views.py`.
+<br>
 
-Las llamadas a la API serán redirigadas a su controlador correspondiente. Aquí se definirán métodos que procesarán cada petición particular (método HTTP + ruta). En cada método se hará, en princpio, lo siguiente:
- 1. Una validación de los datos de entrada y si hace falta, algún cálculo o transformación mínima para adaptar los datos.
- 2. Se llamará al servicio para que haga la lógica de negocio que corresponda.
- 3. Se devolverá el resultado usando el serializador.
+### 2.2. Ejecución general
+Importante que todos los paquetes de Python deben tener un archivo `__init__.py` para poder ser reconocidos.
 
-En principio, no hay que tener mucho codigo en los métodos del controlador; el controlador recibe y devuelve la información, pero es el servicio el que se encarga de todo el proceso interno.
-
-Vamos a usar nombres descriptivos y ser consistentes con ellos. Y sigamos el principio de la única responsabilidad (_single responsability_) para cada método. En vez de `get_by_name`, mejor `get_hotel_by_name`.
-
-Como norma general, un controlador por `views.py`.
+Para poder lanzar el proyecto, los tests o las migraciones hay que cambiar el directorio a `\backend`.
 
 
-###  1.6. Servicios
-Usaremos `services.py`.
+<br>
 
-Los métodos de los controladores llamarán a los servicios para efectuar la lógica de negocio (realizar consultas, hacer transformaciones, borrar objetos, etc.). 
+### 2.3. *Imports*
+Es posible que al realizar un *import* automático su ruta empiece por "backend.pawtel". Hay que quitar "backend" y que empiece directamente por "pawtel".
 
-Vamos a usar nombres descriptivos y ser consistentes con ellos. Y sigamos el principio de la única responsabilidad (_single responsability_) para cada método. En vez de `get_by_name`, mejor `get_hotel_by_name`.
-
-Lo más normal sería un solo servicio por `services.py`, pero en función de si tenemos alguna entidad auxiliar como ya se comentó, puede que tengamos algún otro servicio en el mismo archivo. Eso en el caso de servicios completamente enfocados a una entidad, pero también puede ser que tengamos un conjunto de operaciones particulares y relacionadas, para una cierta funcionalidad bastante bien diferenciada, que, aunque se base en una entidad, nos convenga separlo a un servicio aparto. Funcionalmente no hay diferencia alguna, pero es tan solo por tener las cosas ordenadas.
+También es posible que los *imports* de Django aparezcan subrayados en amarillo diciendo que no se reconocen. La solución más posible es seleccionar manualmente el intérprete del entorno virtual como el intérprete de Python. Ver la primera respuesta en esta [pregunta de StackOverflow](https://stackoverflow.com/questions/67586182/how-to-resolve-import-django-contrib-could-not-be-resolved-from-source-in-vs).
 
 
-### 1.7. Pruebas
-Usaremos `/tests/test_models.py`, `/tests/test_service.py` y `/tests/test_views.py`.
+<br>
 
-En el primero probaremos los modelos; serán pruebas cortas y simples. Probaremos las validaciones más que nada. Probamos los valores más susceptibles a fallo solo y luego hacemos una instancia correcta.
+### 2.4. Migraciones
+Para transformar los modelos de Django en esquemas de la base de datos hace falta realizar las llamadas migraciones. Las migraciones no se hacen solas sino que tenemos que ejecutarlas nosotros cuando implementemos cambios en los modelos para que mantener la base de dato actualizada.
 
-En el segundo probaremos los servicios; estudiaremos todas las funcionalidades en detalle. *Pruebas muy exhaustivas con mucha cobertura*.
+Es muy importante tener cuidado con las migraciones, pues éstas se estructuran en forma de cadena, de manera que al realizar un cambio no se aplican de cero, sino que se aplican sobre las migraciones anteriores, indicando solamente los cambios. Si bien de momento no tenemos datos en las bases de datos, es muy importante no borrar ninguna migración y preservar la cadena.
 
-En el tercero probaremos todo el flujo desde el controlador; cada uno de sus métodos desde una perspectiva más global. *Pruebas muy exhaustivas con mucha cobertura*. 
+Se pueden hacer migraciones de paquetes en particulares, pero es más cómodo situarse en el directorio `\backend` y hacerlo para todos a la vez. Es importante mencionar que para que esto funcione, los paquetes deben contar ya con la carpeta `migrations`. Así que si son nuevos, hay que añadirlos a mano (vacíos).
 
-Estas son unas directrices muy vagas y los ejemplos muy básicos. Cualquiera que proponga usar algunas estrategias más completas y mejores, por supuesto que bienvenido sea. Es más, espero que se os ocurran mejores cosas una vez que empezemos a usar Pytest y estas tecnologías, aunque si no, está bien. Con cosas nuevas me refiero a algunas anotaciones, algún otro método de _fixture_ previo o cualquier cosa, o incluso cambiar la estrategia general de las pruebas del servicio y el controlador como las he definido.
+Para crear los archivos de las migraciones:
+```bash
+python manage.py makemigrations
+```
+
+Para aplicar las migraciones a la base de datos una vez que tenemos los archivos de las migraciones:
+```bash
+python manage.py migrate
+```
+
+
+<br>
+
+### 2.5. Ejecutar tests
+Los tests se pueden ejecutar a diferentes niveles:
+
+A nivel general
+```
+python manage.py test pawtel
+```
+
+A nivel de paquete (llamados apps)
+```
+python manage.py test pawtel.<APP_NAME>
+```
+
+Para lanzar los tests de una sola clase:
+```
+python manage.py test pawtel.<APP_NAME>.tests.<TEST_FILE_NAME>
+```
+
+Para lanzar los tests de un solo método (test):
+```
+python manage.py test pawtel.<APP_NAME>.tests.<TEST_FILE_NAME>.<METHOD_NAME>
+```
+
+Cuidado con los *app names* porque no son tal cual los nombres de las carpetas. Es el nombre definido en el `apps.py` dentro del paquete. Hay que ir al `SETTINGS.py` y en `INSTALLED_APPS` añadir la ruta al `apps.py`. Para HotelOwner, por ejemplo, sería `"pawtel.hotel_owners.apps.HotelOwnersConfig"`.
 
 
 
 
-<br><br>
+
+
+
+
+<br><br><br>
+
+## 3. Estructura
+
+### 3.1. Estructura de carpetas
+Representación visual de la estructura de las carpetas del proyecto a fecha del 08-08-2025. Puede que en un futuro varíe.
+
+```csharp
+backend/
+│── manage.py
+│── .env
+│── requirements.txt
+│── venv/
+│── pawtel/
+│   ├── hotel_owners/
+│   │   ├── __init__.py
+│   │   ├── apps.py
+│   │   ├── models.py
+│   │   ├── serializers.py
+│   │   ├── services.py
+│   │   ├── views.py
+│   │   ├── urls.py
+│   │   ├── migrations/
+│   │   ├── tests/
+│   │   │   ├── test_models.py
+│   │   │   ├── test_serializers.py
+│   │   │   ├── test_services.py
+│   │   │   ├── test_views.py
+│   ├── hotels/
+│   │   ├── ...
+│   ├── ...
+```
+
+Haremos un paquete por cada concepto/objeto principal. Lo más normal es que cada entidad represente un concepto, sin embargo, en función de su relevancia y uso, ciertas entidades pueden pertenecer a otros paquetes que no sean suyos propios. A lo mejor necesitamos una entidad auxiliar que no va a recibir ninguna consulta, sino que es por definir con más comodidad un atributo de una entidad principal. No vamos a trabajar prácticamente nunca con la entidad auxiliar sino con la principal. En ese caso, pueden estar en el mismo paquete.
+
+Detalles relevantes:
+- El archivo `manage.py` es el principal fichero ejecutable del backend. Los comandos de la consola se ejecutarán en referencia a él.
+- Cada paquete dentro de `pawtel` define las llamadas "aplicaciones" (*apps*). El archivo `apps.py` define el nombre que usará. Se reflejará, como ya se ha explicado, en el `SETTINGS.py`.
+- Prácticamente todos los paquetes contarán con los archivos `models.py`, `serializers.py`, `services.py`, `views.py` y `urls.py`, los cuales definirán el código principal de las funcionalidades y el flujo de información.
+
+
+<br>
+
+### 3.2. Funcionalidades y flujo de información
+Las entidades se definen en el `models.py` usando el lenguaje de Django.  
+
+#### Entidades
+- Usaremos `models.py`.
+- Definiremos las entidades necesarias dentro, usando el lenguaje de Django y Python.
+- Realizaremos validaciones sintácticas que se aplicarán al intentar persistir en la base de datos.
+
+
+#### Serializadores
+- Usaremos `serializers.py`.
+- Transforman las instancias de las entidades en objetos JSON. 
+- Cuando esta API tenga que devolver un objeto como respuesta a una petición, no lo hará tal cual usando el objeto de Django, sino que los transformaremos a objetos JSON para que sea más cómodo trabajar con ellos desde el frontend. Para ello simplemente aplicaremos el serializador al objeto de Django antes de enviarlo.
+- ADEMÁS, cuando a la API le llegue un objeto con datos para realizar operaciones como la creación o la actualización de objetos, no se usarán los datos sin más, sino que hay que comprobar la validez de los datos en estructura y contenido.
+    - Los serializadores nos permiten implementar validaciones sintácticas, así que implementaremos las mismas que definimos en el modelo de cara a la base de datos, pero esta vez serán aplicados de cara al *input* de las peticiones. Simplemente aplicaremos el serializador sobre el objeto JSON que nos llegue.
+    - Además, en función del método HTTP podemos restringir los campos del JSON para que solo se actualizen, creen o lean los campos deseados.
+- Cuando una entidad tenga relación con otra, como norma general en el JSON solo se escribirá el ID (que será su PK/FK en principio). Podrá haber alguna excepción con entidades auxiliares.
+- Todos los nombres de los objetos del JSON se escribirán en snake_case.
+
+#### Rutas
+- Usaremos `urls.py`.
+- Las llamadas a la API entran por aquí. Se relaciona una ruta base con su controlador correspondiente. Todas las rutas con esa ruta base serán redirigadas a ese controlador.
+
+
+#### Controladores
+- Usaremos `views.py`.
+- Las llamadas a la API serán redirigadas a su controlador correspondiente. Aquí se definirán métodos que procesarán cada petición particular (método HTTP + ruta). En cada método se hará, en princpio, lo siguiente:
+    1. Se autenticará la petición (roles y objetos solicitados válidos).
+    2. Se validarán los datos de entrada y si hace falta, se hará algún cálculo o transformación mínima para adaptar los datos.
+    3. Se llamará al servicio para que haga la lógica de negocio que corresponda.
+    3. Se devolverá el resultado.
+- En principio, no hay que tener mucho codigo en los métodos del controlador; el controlador recibe y devuelve la información, pero es el servicio el que se encarga del proceso interno.
+- Vamos a usar nombres descriptivos y ser consistentes con ellos. E intentemos seguir el principio de la única responsabilidad (_single responsability_) para cada método. En vez de `get_by_name`, mejor `get_hotel_by_name`.
+- Como norma general, un controlador por `views.py`.
+
+
+#### Servicios
+- Usaremos `services.py`.
+- Los métodos de los controladores llamarán a los servicios para efectuar la lógica de negocio (realizar consultas, hacer transformaciones, borrar objetos, etc.). 
+- Vamos a usar nombres descriptivos y ser consistentes con ellos. Y sigamos el principio de la única responsabilidad (_single responsability_) para cada método. En vez de `get_by_name`, mejor `get_hotel_by_name`.
+- Lo más normal sería un solo servicio por `services.py`, pero en función de si tenemos alguna entidad auxiliar como ya se comentó, puede que tengamos algún otro servicio en el mismo archivo. Eso en el caso de servicios completamente enfocados a una entidad, pero también puede ser que tengamos un conjunto de operaciones particulares y relacionadas, para una cierta funcionalidad bastante bien diferenciada, que, aunque se base en una entidad, nos convenga separlo a un servicio aparto. Funcionalmente no hay diferencia alguna, pero es tan solo por tener las cosas ordenadas.
+
+
+#### Pruebas
+- Usaremos `/tests/test_models.py`, `/tests/test_serializers.py`,  `/tests/test_services.py` y `/tests/test_views.py`.
+- En el primero probaremos los modelos; serán pruebas cortas y simples. Probaremos las validaciones más que nada. Probamos los valores más susceptibles a fallo solo y luego hacemos una instancia correcta.
+- En el segundo probaremos los serializadores. Probaremos las validaciones, la restricción de campos según el método HTTP y la transformación de objeto Django a objeto JSON y viceversa.
+- En el segundo probaremos los servicios; estudiaremos todas las funcionalidades en detalle. *Pruebas muy exhaustivas con mucha cobertura*.
+- En el tercero probaremos todo el flujo desde el controlador; cada uno de sus métodos desde una perspectiva más global. *Pruebas muy exhaustivas con mucha cobertura*. 
+
+
+
+
+<br><br><br>
 
 ## 2. Rutas y controladores
 
@@ -225,5 +381,7 @@ hotel_obj = room.hotel    # Acceso al objeto completo (puede hacer query extra s
 Poned otros si queréis.
 
 https://www.django-rest-framework.org/api-guide/viewsets/
+https://www.django-rest-framework.org/api-guide/serializers/
 https://www.django-rest-framework.org/api-guide/routers/
 https://gokulnath-dev.medium.com/what-is-action-decorator-in-django-rest-framework-c371559c56d9
+
