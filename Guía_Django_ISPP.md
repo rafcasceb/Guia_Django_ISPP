@@ -1,22 +1,18 @@
 # Guía de Django para ISPP
 
 
-1. [Introducción]()
-
-
-
 
 1. [Introducción](#1-datos-fundamentales-del-equipo)  
-2. [Instalación, preparación y ejecución]()
+2. [Instalación, preparación y ejecución](#2-instalación-preparación-y-ejecución)
     - [2.1. Instalación de repositorio y BD]()
     - [2.2. Ejecución general]()
     - [2.3. *Imports*]()
     - [2.4. Migraciones]()
     - [2.5. Ejecutar tests]()
-3. [Estructura]()
+3. [Estructura](#3-estructura)
     - [3.1. Estructura de carpetas]()
     - [3.2. Funcionalidades y flujo de información]()
-4. [Modelos]()
+4. [Modelos](#modelos)
     - []()
 5. [Validaciones]()
 6. [Archivado]()
@@ -38,8 +34,6 @@ DECISIONES DE DISEÑO
 COMENTAR LO DE LAS / al final de las URLS
 
 COMENTAR LO DE BORRAR LA BASE DE DATOS SI MIGRACIONES FUERTES Y ESO.
-
-LAS CAREPTAS MIGRATIONS QUE TENGAN __INIT_-.PY TAMBIÉN
 
  - Estructura general
  - Modelo
@@ -152,7 +146,7 @@ Para transformar los modelos de Django en esquemas de la base de datos hace falt
 
 Es muy importante tener cuidado con las migraciones, pues éstas se estructuran en forma de cadena, de manera que al realizar un cambio no se aplican de cero, sino que se aplican sobre las migraciones anteriores, indicando solamente los cambios. Si bien de momento no tenemos datos en las bases de datos, es muy importante no borrar ninguna migración y preservar la cadena.
 
-Se pueden hacer migraciones de paquetes en particulares, pero es más cómodo situarse en el directorio `\backend` y hacerlo para todos a la vez. Es importante mencionar que para que esto funcione, los paquetes deben contar ya con la carpeta `migrations`. Así que si son nuevos, hay que añadirlos a mano (vacíos).
+Se pueden hacer migraciones de paquetes en particulares, pero es más cómodo situarse en el directorio `\backend` y hacerlo para todos a la vez. Es importante mencionar que para que esto funcione, los paquetes deben contar ya con el subpaquete `migrations`, que tiene que tener también una carpeta `__init__.py`. Así que si son nuevos, hay que añadirlos a mano (vacíos).
 
 Para crear los archivos de las migraciones:
 ```bash
