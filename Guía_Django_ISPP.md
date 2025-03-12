@@ -7,15 +7,15 @@
 
 
 1. [Introducción](#1-datos-fundamentales-del-equipo)  
-2. [Instalación, preparación y ejecución]()  
-    - [Instalación de repositorio y BD]()
-    - [Ejecución general]()
-    - [*Imports*]()
-    - [Migraciones]()
-    - [Ejecutar tests]()
+2. [Instalación, preparación y ejecución]()
+    - [2.1. Instalación de repositorio y BD]()
+    - [2.2. Ejecución general]()
+    - [2.3. *Imports*]()
+    - [2.4. Migraciones]()
+    - [2.5. Ejecutar tests]()
 3. [Estructura]()
-    - [Estructura de carpetas]()
-    - [Funcionalidades y flujo de información]()
+    - [3.1. Estructura de carpetas]()
+    - [3.2. Funcionalidades y flujo de información]()
 4. [Modelos]()
     - []()
 5. [Validaciones]()
@@ -28,6 +28,75 @@
 
 
 
+<br><br><br>
+
+-----------
+## TEMPORAL (NOTAS PARA IR AÑADIENDO)
+
+DECISIONES DE DISEÑO
+
+COMENTAR LO DE LAS / al final de las URLS
+
+COMENTAR LO DE BORRAR LA BASE DE DATOS SI MIGRACIONES FUERTES Y ESO.
+
+LAS CAREPTAS MIGRATIONS QUE TENGAN __INIT_-.PY TAMBIÉN
+
+ - Estructura general
+ - Modelo
+	Full clean, clean y save
+	Usamos charfield, no testfield.
+	Ver si podemos reinicar las migraciones en cualquier momento o después de cada release tienen que estar fijas.
+ - Validaciones 
+ 	Qué validaciones al modelo (para la BD, por fuera de la API), json (sintácticas y semánticas simples, por la API) o servicio (sintácticas complejas, por la API)
+	Qué validamos en la autorización al principio y qué no.
+	Asunción de correctitud en los servicios salvo en los checks de antes. 
+ - Archivado
+	Explicar
+	Cómo hacer el archivdao en el futuro (tengo ejemplos)
+ - Permisos
+	 is staff and is superuser por defecto false
+ - Serializadores
+	Cómo y cuándo usar el json
+	Explicar el base_serializer y por qué ya no hacen falta los required
+	Comentar lo del create y el update kwargs
+ - Enrutamiento 
+	... Lo que ya tengo
+ - Controladores y servicios
+	Estructura del request de django (funciona con puntos no como un diccionario).
+	Qué validamos en la autorización al principio y qué no.
+	Asunción de correctitud en los servicios salvo en los checks de antes.
+ - Tests
+	Cómo
+
+request.data: Contains parsed data from the request body (useful for POST, PUT, PATCH).
+request.query_params: Holds URL query parameters (e.g., ?key=value).
+request.method: The HTTP method (e.g., "GET", "POST", "PUT").
+request.user: The authenticated user making the request.
+request.auth: Authentication details.
+request.headers: A dictionary-like object of request headers.
+
+diferencia entre estos dos (uno usaría por ejemplo user_id y el otro user)
+        self.hotel_owner = HotelOwner.objects.create(
+            user_id=self.app_user.id
+        )
+        self.valid_data = {
+            "name": "Hotel Paradise",
+            "address": "123 Sunshine Street",
+            "city": "Miami",
+            "description": "Un hotel lujoso en Miami.",
+            "hotel_owner": self.hotel_owner.id,
+        }
+
+
+explicar el cambio en el settings.py para testear
+
+no hace falta revisar foreign keys manualmente porque el serializer.valid ya lo hace.
+
+-----------
+
+
+
+
 
 <br><br><br>
 
@@ -35,7 +104,7 @@
 
 Esto es una guía que he hecho para que todos más o menos sigamos los mismos criterios básicos en cuanto de la estructura de los archivos y las rutas de la API. No soy para nada experto en Django. He echado un buen rato para estudiar cuáles eran las mejores opciones y creo el sistema que propongo ha quedado bastante lógico y robusto, pero cualquiera que tenga otra propuesta de lo que sea, que lo diga. Si preferís meter las URLS a mano en el urls.py en vez de usar el Django Rest Framework (DRF), decidlo; ambos tienen sus ventajas e inconvenientes. Si cualquiera de las cosas que haya dicho por aquí os parece una tontería o simplemente innecesario, decidlo también. Ni se os ocurra callaros.
 
-El enlace al repositorio con algunos ejemplos: https://github.com/rafcasceb/Guia_Django_ISPP. Fijaos en cómo hacer la estructuras de las carpetas y los métodos, pero desde entonces hemos cambiado algunas cosas como el formato de las rutas por ejemplo.
+El enlace al repositorio con algunos ejemplos: https://github.com/rafcasceb/Guia_Django_ISPP. Fijaos en cómo hacer la estructuras de las carpetas y los métodos, pero desde entonces hemos cambiado algunas cosas como el formato de las rutas por ejemplo. EJEMPLOS ALGO ANTICUADOS.
 
 
 
@@ -118,7 +187,7 @@ python manage.py test pawtel.<APP_NAME>.tests.<TEST_FILE_NAME>
 
 Para lanzar los tests de un solo método (test):
 ```
-python manage.py test pawtel.<APP_NAME>.tests.<TEST_FILE_NAME>.<METHOD_NAME>
+python manage.py test pawtel.<APP_NAME>.tests.<TEST_FILE_NAME>.<CLASS_NAME>.<METHOD_NAME>
 ```
 
 Cuidado con los *app names* porque no son tal cual los nombres de las carpetas. Es el nombre definido en el `apps.py` dentro del paquete. Hay que ir al `SETTINGS.py` y en `INSTALLED_APPS` añadir la ruta al `apps.py`. Para HotelOwner, por ejemplo, sería `"pawtel.hotel_owners.apps.HotelOwnersConfig"`.
@@ -226,7 +295,20 @@ Las entidades se definen en el `models.py` usando el lenguaje de Django.
 
 
 
+
 <br><br><br>
+
+## Modelos
+...
+
+
+
+
+
+
+<br><br><br>
+
+> A PARTIR DE AQUÍ AÚN NO LO HE REHECHO. ES DE LA VERSIÓN ANTIUGA DEL DOCUMENTO.
 
 ## 2. Rutas y controladores
 

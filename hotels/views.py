@@ -4,6 +4,7 @@ from rest_framework.decorators import action
 from rest_framework import status
 from .serializers import HotelSerializer
 from .services import HotelService
+from django.http import JsonResponse
 
 
 class HotelViewSet(viewsets.ViewSet):
@@ -20,12 +21,15 @@ class HotelViewSet(viewsets.ViewSet):
 
 
     def retrieve(self, request, pk=None):  # GET /hotels/{id}/
-        """Devuelve un solo hotel por ID"""
         hotel = HotelService.get_hotel_by_id(pk)
-        if hotel:
-            serializer = HotelSerializer(hotel)
-            return Response(serializer.data)
-        return Response({"error": "Hotel not found"}, status=status.HTTP_404_NOT_FOUND)
+        
+        if not hotel:
+            return Response({"error": "Hotel not found."}, status=status.HTTP_404_NOT_FOUND)
+        if not hotel.is_active():
+            return Response({"error": "Hotel is archived."}, status=status.HTTP_404_NOT_FOUND) 
+        
+        serializer = HotelSerializer(hotel)
+        return Response(serializer.data)
 
 
     def create(self, request):  # POST /hotels/
@@ -36,12 +40,15 @@ class HotelViewSet(viewsets.ViewSet):
 
 
     def destroy(self, request, pk=None):  # DELETE /hotels/{id}/
-        """Elimina un hotel por ID"""
-        hotel = HotelService.get_hotel_by_id(pk)
-        if hotel:
-            hotel.delete()
+        """Elimina o archiva un hotel por ID"""
+        response = HotelService.archive_or_delete_hotel(pk)
+
+        if response["status"] == "archived":
+            return Response(response, status=status.HTTP_403_FORBIDDEN)  
+        elif response["status"] == "deleted":
             return Response(status=status.HTTP_204_NO_CONTENT)
-        return Response({"error": "Hotel not found"}, status=status.HTTP_404_NOT_FOUND)
+        else:
+            return Response(response, status=status.HTTP_404_NOT_FOUND) 
     
     
     # --------------
@@ -51,7 +58,6 @@ class HotelViewSet(viewsets.ViewSet):
     # Si no ponemos detail, no espera un id (pk)
     @action(detail=False, methods=['get'], url_path="cities", url_name="get_all_cities")  # GET /hotels/cities
     def get_all_cities(self, request):
-        """Find all cities"""
         cities = HotelService.get_all_cities()
         if cities:
             serializer = CitySerializer(cities, many=True)
@@ -62,10 +68,9 @@ class HotelViewSet(viewsets.ViewSet):
     # Si ponemos detail, espera un id (pk) tras la ruta base
     @action(detail=True, methods=['get'], url_path="name", url_name="get_name_by_hotel_id")  # GET /hotels/{id}/name
     def get_name_by_hotel_id(self, request, pk=None):
-        """Find name by hotel id"""
         name = HotelService.get_name_by_hotel_id(pk)
         if name:
-            serializer = NameSerializer(name)  # Ahora mismo es solo un campo, así que no se consideraría mal no usar el serializador y poner directamente:  return Response({"name": name})
+            serializer = NameSerializer(name)  # Ahora mismo es solo un campo, así que se podría estudiar no usar el serializador y poner directamente:  return Response({"name": name})
             return Response(serializer.data)
         return Response({"error": "Hotel not found"}, status=status.HTTP_404_NOT_FOUND)
     
@@ -76,7 +81,6 @@ class HotelViewSet(viewsets.ViewSet):
     
     @action(detail=False, methods=['get'], url_path="city-summary/(?P<city>[\w\s-]+)", url_name="get_summary_by_city")  # GET /hotels/city-summary/{city}
     def get_summary_by_city(self, request, city=None):
-        """Find city summary by city name"""
         city_summary = HotelService.get_city_summary_by_city(city)
         if city_summary:
             serializer = CitySummarySerializer(city_summary)
