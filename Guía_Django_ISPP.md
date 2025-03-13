@@ -12,11 +12,15 @@
 3. [Estructura](#3-estructura)
     - [3.1. Estructura de carpetas]()
     - [3.2. Funcionalidades y flujo de información]()
-4. [Modelos](#modelos)
-    - []()
-5. [Validaciones]()
-6. [Archivado]()
-7. [Permisos de roles]()
+4. [Comentarios sobre modelos](#4-comentarios-sobre-modelos)
+5. [Validación y autorización](#5-validación-y-autorización)
+    - [Validaciones semánticas vs validaciones sintácticas](#validaciones-semánticas-vs-validaciones-sintácticas)
+    - [Validaciones del modelo](#validaciones-del-modelo)
+    - [Validaciones del serializador](#validaciones-del-serializador)
+    - [Validaciones del servicio](#validaciones-del-servicio)
+    - [Autorización](#autorización)
+6. [Permisos de roles]()
+7. [Archivado]()
 8. [Serializadores]()
 9. [Enrutamiento]()
 10. [Controladores y servicios]()
@@ -33,22 +37,11 @@ DECISIONES DE DISEÑO
 
 COMENTAR LO DE LAS / al final de las URLS
 
-COMENTAR LO DE BORRAR LA BASE DE DATOS SI MIGRACIONES FUERTES Y ESO.
-
- - Estructura general
- - Modelo
-	Full clean, clean y save
-	Usamos charfield, no testfield.
-	Ver si podemos reinicar las migraciones en cualquier momento o después de cada release tienen que estar fijas.
- - Validaciones 
- 	Qué validaciones al modelo (para la BD, por fuera de la API), json (sintácticas y semánticas simples, por la API) o servicio (sintácticas complejas, por la API)
-	Qué validamos en la autorización al principio y qué no.
-	Asunción de correctitud en los servicios salvo en los checks de antes. 
+ - Permisos
+	 is staff and is superuser por defecto false
  - Archivado
 	Explicar
 	Cómo hacer el archivdao en el futuro (tengo ejemplos)
- - Permisos
-	 is staff and is superuser por defecto false
  - Serializadores
 	Cómo y cuándo usar el json
 	Explicar el base_serializer y por qué ya no hacen falta los required
@@ -62,12 +55,15 @@ COMENTAR LO DE BORRAR LA BASE DE DATOS SI MIGRACIONES FUERTES Y ESO.
  - Tests
 	Cómo
 
+
 request.data: Contains parsed data from the request body (useful for POST, PUT, PATCH).
 request.query_params: Holds URL query parameters (e.g., ?key=value).
 request.method: The HTTP method (e.g., "GET", "POST", "PUT").
 request.user: The authenticated user making the request.
 request.auth: Authentication details.
 request.headers: A dictionary-like object of request headers.
+
+en los tests
 
 diferencia entre estos dos (uno usaría por ejemplo user_id y el otro user)
         self.hotel_owner = HotelOwner.objects.create(
@@ -85,6 +81,17 @@ diferencia entre estos dos (uno usaría por ejemplo user_id y el otro user)
 explicar el cambio en el settings.py para testear
 
 no hace falta revisar foreign keys manualmente porque el serializer.valid ya lo hace.
+
+comentar lo de los seeders.
+
+comentar los tokens. 
+
+detail para errores y message para correctos
+raising y returning excepciones
+
+black .     para ejecutar black del precommit.
+git commit --no-verify -m "..." -m "..."    para que no vaya el pre-commit
+
 
 -----------
 
@@ -157,6 +164,8 @@ Para aplicar las migraciones a la base de datos una vez que tenemos los archivos
 ```bash
 python manage.py migrate
 ```
+
+Sería raro, pero se podría dar que haya habido cambios grandes en las migraciones y no se pueda migrar directamente. Lo solución más normal es borrar la base de datos manualmente (en Heidi, DBeaver o lo que sea), crearla una nueva (mismo nombre, claro) y migrar de nuevo. Debería funcionar.
 
 
 <br>
@@ -292,8 +301,80 @@ Las entidades se definen en el `models.py` usando el lenguaje de Django.
 
 <br><br><br>
 
-## Modelos
-...
+## 4. Comentarios sobre modelos
+
+Los atributos de texto (strings) serán definidos con el atributo de Django `CharField`, no con `TextField`. Tienen sus diferencias, pero para nuestros requisitos, el primero nos vale mejor.
+
+Otro aspecto a tener en cuenta es las validaciones y persistencias de las instancias de los modelos. Hay que diferenciar entre los métodos `clean()`, `full_clean()` `save()`.
+
+Como ya se ha comentado, las validacinoes de los modelos se aplican de cara a la base de datos, no en la creación de instancias en Django. Sin embargo, con `save()` no basta, sino que hay que usar `full_clean()` antes para probar las validaciones.
+
+| Método        | Valida Campos | Ejecuta `clean()` Personalizado | Verifica Unicidad | Guarda en BD |
+|---------------|---------------|---------------------------------|-------------------|--------------|
+| `full_clean()` | ✅ Sí        | ✅ Sí                          | ✅ Sí           | ❌ No       |
+| `clean()`     | ❌ No        | ✅ Sí                          | ❌ No           | ❌ No       |
+| `save()`      | ❌ No (a menos que se sobrescriba) | ❌ No (a menos que se sobrescriba) | ❌ No (a menos que se sobrescriba) | ✅ Sí |
+
+
+
+
+
+<br><br><br>
+
+## 5. Validación y autorización
+
+
+<br>
+
+### Validaciones semánticas vs validaciones sintácticas
+
+Las validaciones sintácticas verifican que los datos cumplen con el formato correcto, como la longitud de un campo, el tipo de dato o la estructura esperada (por ejemplo, el formato de un número de teléfono).
+
+Las validaciones semánticas, en cambio, verifican el significado y la coherencia de los datos dentro del contexto de la aplicación, que sean lógicos y útiles dentro del sistema. Por ejemplo, asegurarse de que una fecha de reserva no sea en el pasado, que una edad ingresada sea mayor a 18 si el usuario debe ser adulto, que un nombre de usuario no contenga palabras prohibidas, o que un usuario no tenga más de cierto número de elementos. 
+
+
+<br>
+
+### Validaciones del modelo
+Los modelos de Django implementa **validaciones semánticas**. Se aplican para la base de datos. Es necesario por si entrasen datos por fuera de la API.
+
+Podrían aplicar validaciones sintácticas pero no se ha considerado necesario.
+
+
+<br>
+
+### Validaciones del serializador
+Los serializadores implementan **validaciones semánticas**. Junto a los servicios completan las validaciones en la capa del servicio.
+
+Podrían aplicar validaciones sintácticas pero por separación de responsabilidades y facilidad de uso, se cederá a los servicios.
+
+Implementan las mismas validaciones que los modelos, pero cuidado con la sintáxis que es un poco diferente. Junto a las validacoines, definen si los campos son legibles o modificables en función de la petición HTTP. Ya se verá más adelante.
+
+
+<br>
+
+### Validaciones del servicio
+Los servicios implementan **validaciones sintácticas**. Junto a los serializadores completan las validaciones en la capa del servicio.
+
+En función de la ruta de la petición a la API, se realizarán diferentes validaciones.
+
+Puesto que los servicios serán usados casi exclusivamente por los controladores de la API, no se ha considerado necesario validar cada vez todos los argumentos en cada función, sino que solo se valian al principio del método del controlador, y dentro de los métodos del servicio se asume que son correctos y existen. Por ejemplo, en el `update_room` no hace falta comprobar si existe o no la *primary key* que se le pasa como argumento, o si tiene asociado un RoomType y éste a su vez un Hotel y demás. Se asume que en los pasos previos de la autorización y la validación se ha comprobado esto, y el método de *update* tan solo hará *retrieve* del objeto y lo devolverá.
+
+Se hablará de las excepciones y las respuestas más adelante.
+
+
+<br>
+
+### Autorización
+El primer paso de la mayoría de métodos de los controladores (en el futuro espero que todos) es autorizar la petición, que es diferente a la validación que se hará en pasos posteriores.
+
+La autorización, comprueba que se tengan los permisos para realizar la opción que se pide.
+ - El usuario que realiza la operación está autenticado
+ - El usuario que realiza la operación tiene el rol necesario para la operación en concreto.
+ - Los objetos de la operación existen.
+ - El usuario que realiza la operación tiene potestad sobre esos objetos (por ejemplo, un dueño de hotel solo puede modificar sus hoteles).
+
+La validación se encarga de los cambios que va a realizar la operación, comprobando el contenido de los datos y las consecuencias en el sistema.
 
 
 
