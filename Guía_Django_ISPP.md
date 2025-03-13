@@ -4,23 +4,23 @@
 
 1. [Introducción](#1-datos-fundamentales-del-equipo)  
 2. [Instalación, preparación y ejecución](#2-instalación-preparación-y-ejecución)
-    - [2.1. Instalación de repositorio y BD]()
-    - [2.2. Ejecución general]()
-    - [2.3. *Imports*]()
-    - [2.4. Migraciones]()
-    - [2.5. Ejecutar tests]()
+    - [2.1. Instalación de repositorio y BD](#21-instalación-de-repositorio-y-bd)
+    - [2.2. Ejecución general](#22-ejecución-general)
+    - [2.3. *Imports*](#23-imports)
+    - [2.4. Migraciones](#24-migraciones)
+    - [2.5. Ejecutar tests](#25-ejecutar-tests)
 3. [Estructura](#3-estructura)
-    - [3.1. Estructura de carpetas]()
-    - [3.2. Funcionalidades y flujo de información]()
+    - [3.1. Estructura de carpetas](#31-estructura-de-carpetas)
+    - [3.2. Funcionalidades y flujo de información](#32-funcionalidades-y-flujo-de-información)
 4. [Comentarios sobre modelos](#4-comentarios-sobre-modelos)
 5. [Validación y autorización](#5-validación-y-autorización)
-    - [Validaciones semánticas vs validaciones sintácticas](#validaciones-semánticas-vs-validaciones-sintácticas)
-    - [Validaciones del modelo](#validaciones-del-modelo)
-    - [Validaciones del serializador](#validaciones-del-serializador)
-    - [Validaciones del servicio](#validaciones-del-servicio)
-    - [Autorización](#autorización)
-6. [Permisos de roles]()
-7. [Archivado]()
+    - [Validaciones semánticas vs validaciones sintácticas](#51-validaciones-semánticas-vs-validaciones-sintácticas)
+    - [Validaciones del modelo](#52-validaciones-del-modelo)
+    - [Validaciones del serializador](#53-validaciones-del-serializador)
+    - [Validaciones del servicio](#54-validaciones-del-servicio)
+    - [Autorización](#55-autorización)
+6. [Permisos de roles](#6-permisos-de-roles)
+7. [Archivado](#7-archivado)
 8. [Serializadores]()
 9. [Enrutamiento]()
 10. [Controladores y servicios]()
@@ -37,11 +37,6 @@ DECISIONES DE DISEÑO
 
 COMENTAR LO DE LAS / al final de las URLS
 
- - Permisos
-	 is staff and is superuser por defecto false
- - Archivado
-	Explicar
-	Cómo hacer el archivdao en el futuro (tengo ejemplos)
  - Serializadores
 	Cómo y cuándo usar el json
 	Explicar el base_serializer y por qué ya no hacen falta los required
@@ -49,11 +44,20 @@ COMENTAR LO DE LAS / al final de las URLS
  - Enrutamiento 
 	... Lo que ya tengo
  - Controladores y servicios
-	Estructura del request de django (funciona con puntos no como un diccionario).
-	Qué validamos en la autorización al principio y qué no.
-	Asunción de correctitud en los servicios salvo en los checks de antes.
+	Estructura del request de django (funciona con puntos no como un diccionario). lo que pone ahí abajo.
+    detail para errores y message para correctos
+    raising y returning excepciones
  - Tests
 	Cómo
+    explicar un poco el forzar logearse como app user
+    Diferenciar entre lo que pongo ahí abajo...
+    explicar el cambio en el settings.py para testear si hiciera falta. decir que luego se comenta los tokens
+ - Otros
+    (validations) no hace falta revisar foreign keys manualmente porque el serializer.valid ya lo hace.
+    comentar lo de los seeders.
+    comentar los tokens (y explicar testing en postman no hace falta explicar que es para postman, hablar de rutas bearer token y ya) 
+    black .     para ejecutar black del precommit.
+    git commit --no-verify -m "..." -m "..."    para que no vaya el pre-commit
 
 
 request.data: Contains parsed data from the request body (useful for POST, PUT, PATCH).
@@ -63,7 +67,6 @@ request.user: The authenticated user making the request.
 request.auth: Authentication details.
 request.headers: A dictionary-like object of request headers.
 
-en los tests
 
 diferencia entre estos dos (uno usaría por ejemplo user_id y el otro user)
         self.hotel_owner = HotelOwner.objects.create(
@@ -76,21 +79,13 @@ diferencia entre estos dos (uno usaría por ejemplo user_id y el otro user)
             "description": "Un hotel lujoso en Miami.",
             "hotel_owner": self.hotel_owner.id,
         }
+        self.hotel_owner_model = HotelOwner(
+            user=...,
+            abc=...
+        )
+Lo que lleve object es base de datos
 
 
-explicar el cambio en el settings.py para testear
-
-no hace falta revisar foreign keys manualmente porque el serializer.valid ya lo hace.
-
-comentar lo de los seeders.
-
-comentar los tokens. 
-
-detail para errores y message para correctos
-raising y returning excepciones
-
-black .     para ejecutar black del precommit.
-git commit --no-verify -m "..." -m "..."    para que no vaya el pre-commit
 
 
 -----------
@@ -317,6 +312,16 @@ Como ya se ha comentado, las validacinoes de los modelos se aplican de cara a la
 
 
 
+<EXPLICAR DIFERENTES USUARIOS>------------------------------------------- 
+
+--------------
+-----------
+----------
+-----------------
+-----------
+-----------
+-------------
+----------
 
 
 <br><br><br>
@@ -326,7 +331,7 @@ Como ya se ha comentado, las validacinoes de los modelos se aplican de cara a la
 
 <br>
 
-### Validaciones semánticas vs validaciones sintácticas
+### 5.1. Validaciones semánticas vs validaciones sintácticas
 
 Las validaciones sintácticas verifican que los datos cumplen con el formato correcto, como la longitud de un campo, el tipo de dato o la estructura esperada (por ejemplo, el formato de un número de teléfono).
 
@@ -335,7 +340,7 @@ Las validaciones semánticas, en cambio, verifican el significado y la coherenci
 
 <br>
 
-### Validaciones del modelo
+### 5.2. Validaciones del modelo
 Los modelos de Django implementa **validaciones semánticas**. Se aplican para la base de datos. Es necesario por si entrasen datos por fuera de la API.
 
 Podrían aplicar validaciones sintácticas pero no se ha considerado necesario.
@@ -343,7 +348,7 @@ Podrían aplicar validaciones sintácticas pero no se ha considerado necesario.
 
 <br>
 
-### Validaciones del serializador
+### 5.3. Validaciones del serializador
 Los serializadores implementan **validaciones semánticas**. Junto a los servicios completan las validaciones en la capa del servicio.
 
 Podrían aplicar validaciones sintácticas pero por separación de responsabilidades y facilidad de uso, se cederá a los servicios.
@@ -353,7 +358,7 @@ Implementan las mismas validaciones que los modelos, pero cuidado con la sintáx
 
 <br>
 
-### Validaciones del servicio
+### 5.4. Validaciones del servicio
 Los servicios implementan **validaciones sintácticas**. Junto a los serializadores completan las validaciones en la capa del servicio.
 
 En función de la ruta de la petición a la API, se realizarán diferentes validaciones.
@@ -365,7 +370,7 @@ Se hablará de las excepciones y las respuestas más adelante.
 
 <br>
 
-### Autorización
+### 5.5. Autorización
 El primer paso de la mayoría de métodos de los controladores (en el futuro espero que todos) es autorizar la petición, que es diferente a la validación que se hará en pasos posteriores.
 
 La autorización, comprueba que se tengan los permisos para realizar la opción que se pide.
@@ -375,6 +380,36 @@ La autorización, comprueba que se tengan los permisos para realizar la opción 
  - El usuario que realiza la operación tiene potestad sobre esos objetos (por ejemplo, un dueño de hotel solo puede modificar sus hoteles).
 
 La validación se encarga de los cambios que va a realizar la operación, comprobando el contenido de los datos y las consecuencias en el sistema.
+
+
+
+
+
+
+<br><br><br>
+
+## 6. Permisos de roles
+	 is staff and is superuser por defecto false
+Los usuarios que tenemos y cómo implementar roles
+
+
+
+
+
+
+<br><br><br>
+
+## 7. Archivado
+
+### Definición de funcionalidad de archivado
+...
+
+Los usuarios usarán `is_active`. Cuidado, porque significa lo opuesto: is_active -> not is_archived.
+
+### Implementación de funcionalidad de archivado
+Cómo hacer el archivado en el futuro (tengo ejemplos)
+
+
 
 
 
