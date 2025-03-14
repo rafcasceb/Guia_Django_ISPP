@@ -13,8 +13,9 @@
     - [3.1. Estructura de carpetas](#31-estructura-de-carpetas)
     - [3.2. Funcionalidades y flujo de información](#32-funcionalidades-y-flujo-de-información)
 4. [Comentarios sobre modelos](#4-comentarios-sobre-modelos)
-    - [4.1. Comentarios generales](#41-comentarios-generales)
-    - [4.2. Usuarios](#42-usuarios)
+    - [4.1. Atributos](#41-atributos)
+    - [4.2. Validaciones BD](#42-validaciones-bd)
+    - [4.3. Usuarios](#43-usuarios)
 5. [Validación y autorización](#5-validación-y-autorización)
     - [Validaciones semánticas vs validaciones sintácticas](#51-validaciones-semánticas-vs-validaciones-sintácticas)
     - [Validaciones del modelo](#52-validaciones-del-modelo)
@@ -29,7 +30,11 @@
     - [8.3. Ejecutar acción](#83-ejecutar-acción)
     - [8.4. Serializar output](#84-serializar-output)
     - [8.5. Serializar foreign keys](#85-serializar-foreign-keys)
-9. [Enrutamiento]()
+9. [Rutas](#9-rutas)
+    - [9.1. Métodos reservados del controlador](#91-métodos-reservados-del-controlador)
+    - [9.2. Métodos no reservados del controlador](#92-métodos-no-resevados-del-controlador)
+    - [9.3. Cuidado con los solapamientos](#93-cuidado-con-los-solapamientos)
+    - [URL names (reverse)](#94-url-names-reverse)
 10. [Controladores y servicios]()
 11. [Tests]()
 
@@ -40,16 +45,6 @@
 -----------
 ## TEMPORAL (NOTAS PARA IR AÑADIENDO)
 
-DECISIONES DE DISEÑO
-
-COMENTAR LO DE LAS / al final de las URLS
-
- - Enrutamiento 
-	... Lo que ya tengo
- - Controladores y servicios
-	Estructura del request de django (funciona con puntos no como un diccionario). lo que pone ahí abajo.
-    detail para errores y message para correctos
-    raising y returning excepciones
  - Tests
 	Cómo
     explicar un poco el forzar logearse como app user
@@ -61,13 +56,6 @@ COMENTAR LO DE LAS / al final de las URLS
     black .     para ejecutar black del precommit.
     git commit --no-verify -m "..." -m "..."    para que no vaya el pre-commit
 
-
-request.data: Contains parsed data from the request body (useful for POST, PUT, PATCH).
-request.query_params: Holds URL query parameters (e.g., ?key=value).
-request.method: The HTTP method (e.g., "GET", "POST", "PUT").
-request.user: The authenticated user making the request.
-request.auth: Authentication details.
-request.headers: A dictionary-like object of request headers.
 
 
 diferencia entre estos dos (uno usaría por ejemplo user_id y el otro user)
@@ -303,10 +291,26 @@ Las entidades se definen en el `models.py` usando el lenguaje de Django.
 
 ## 4. Comentarios sobre modelos
 
-### 4.1. Comentarios generales
-
+### 4.1. Atributos
 Los atributos de texto (strings) serán definidos con el atributo de Django `CharField`, no con `TextField`. Tienen sus diferencias, pero para nuestros requisitos, el primero nos vale mejor.
 
+Sobre las *foreign keys*, en Django lo mejor no es cargar el objeto entero como en Java con el ORM de Hibernate. Es un poco diferente: usamos `models.ForeignKey`.
+
+Por ejemplo:
+```python
+class Room(models.Model):
+    hotel = models.ForeignKey(Hotel, on_delete=models.CASCADE, related_name="rooms")
+    number = models.IntegerField()
+```
+
+En principio, podemos usar tanto el id como el objeto (el objeto seguro, pero lo de el id directamente hay que comprobarlo muy bien porque puede que no funcione).
+```python
+room = Room.objects.first()
+hotel_id = room.hotel_id  # Acceso directo al ID (más eficiente, si es que funciona)
+hotel_obj = room.hotel    # Acceso al objeto completo (puede hacer query extra si no está en caché)
+```
+
+### 4.2. Validaciones BD
 Otro aspecto a tener en cuenta es las validaciones y persistencias de las instancias de los modelos. Hay que diferenciar entre los métodos `clean()`, `full_clean()` `save()`.
 
 Como ya se ha comentado, las validacinoes de los modelos se aplican de cara a la base de datos, no en la creación de instancias en Django. Sin embargo, con `save()` no basta, sino que hay que usar `full_clean()` antes para probar las validaciones.
@@ -318,7 +322,7 @@ Como ya se ha comentado, las validacinoes de los modelos se aplican de cara a la
 | `save()`      | ❌ No (a menos que se sobrescriba) | ❌ No (a menos que se sobrescriba) | ❌ No (a menos que se sobrescriba) | ✅ Sí |
 
 
-### 4.2. Usuarios
+### 4.3. Usuarios
 
 Los usuarios se implementarán mediante un `AppUser`. Esta entidad está configurada para que Django la considere la entidad base de usuarios, por lo que los registros ser harán con esta entidad.
 
@@ -438,7 +442,7 @@ class RoomSerializer(BaseSerializer):
         # Serializer definition...
 ```
 
-Para que funcione esta lógica que depende del método HTTP, hay que pasarle el contexto de la petición al serializador.
+Para que funcione esta lógica que depende del método HTTP, hay que pasarle el contexto de la petición al serializador (lo envolvemos en un diccionario con `context = {"request": request}`).
 
 En caso de *update*, también hay que pasarle la instancia actual para mantener los datos no incluidos en la petición.
 
@@ -522,9 +526,9 @@ La única excepcón de momento son los roles, los cuales llevarán anidados su `
 
 > A PARTIR DE AQUÍ AÚN NO LO HE REHECHO. ES DE LA VERSIÓN ANTIUGA DEL DOCUMENTO.
 
-## 2. Rutas y controladores
+## 9. Rutas
 
-### 2.1. Métodos reservados del controlador
+### 9.1. Métodos reservados del controlador
 En el urls.py se relaciona una ruta base con un controlador del views.py. Cada controlador está representado por una clase, y cada clase tiene varios métodos para recibir las diferentes rutas a partir de esa ruta base.
 
 Django Rest Framework (DRF) se reserva varios nombres de métodos del controlador para redirigir automáticamente ciertas rutas. Por ejemplo, si tenemos relacionada la ruta base `hotels` con el controlador de hoteles y definimos el método `list(self, request)` en el controlador de hoteles, cuando Django reciba la petición `GET api/hotels`, la redirigirá automáticamente al método list.
@@ -540,13 +544,15 @@ Aquí están los métodos reservados de DRF para el Default Router:
 | partial_update(self, request, pk=None) | PATCH         | /hotels/{id}/ (editar parcial)| {basename}-detail       |
 | destroy(self, request, pk=None)        | DELETE        | /hotels/{id}/ (borrar)        | {basename}-detail       |
 
+(Importante la "/" al final.)
+
 Algunos comparten el mismo URL name simplemente porque comparten la ruta. Ya cuando se utilice esa ruta con un método HTTP se redirigirá al método que corresponda. La función `reverse` de Django lo que hace es darnos la URL completa a partir del nombre de una "vista", que sería lo que nosotros llamamos método de un controlador.
 
 
 <br>
 
-### 2.2. Métodos no resevados del controlador
-Podemos definir nuevos métodos del controlador con nombres no reservados. Hay varias maneras, pero la más directa es añadiendo el decorador `@action` para especificar qué petición deseamos que se redirija al método. Indicamos el método HTTP y la ruta. En función del tipo de acción que necesitemos, construiremos la ruta de forma diferente. Por ejemplo:
+### 9.2. Métodos no resevados del controlador
+Podemos definir nuevos métodos del controlador con nombres no reservados. Hay varias maneras, pero la más directa es añadiendo el decorador `@action` para especificar qué petición deseamos que se redirija al método. Indicamos el método HTTP y la ruta. En función del tipo de acción que necesitemos, construiremos la ruta de forma diferente. Por ejemplo (casos no realistas de la aplicación):
 
 #### Añadir _paths_
 ¿Queremos todas las ciudades? Tan solo necesitamos un nuevo _path_.
@@ -563,26 +569,32 @@ Podemos definir nuevos métodos del controlador con nombres no reservados. Hay v
         ...
 ```
 
-#### _Path params_
-¿Queremos un resumen de los hoteles de una ciudad (por decir algo)? Añadimos un nuevo _path_ a la ruta y recibimos un _path param_.
+#### _Query params_
+¿Queremos filtrar los hoteles según ciertos parámetros? Usamos _query params_. Vienen en la *request*.
+```python
+    @action(detail=False, methods=['get'])  # GET /hotels?name={name}&city={city}
+    def filter_hotels(self, request):
+        ...
+```
+O podemos ponerlo en el método `list` en función del caso:
+```python
+    def list(self, request):
+        filters = request.query_params.dict()  # URL filters checked
+        ...
+```
+
+#### _Path params_ (menos común)
+¿Queremos un resumen de los hoteles de una ciudad (por decir algo)? Añadimos un nuevo _path_ a la ruta y recibimos un _path param_ para indicar el nombre. Aunque suele ser mejor filtrar por *query params*.
 ```python
     @action(detail=False, methods=['get'], url_path="city-summary/(?P<city>[\w\s-]+)")  # GET /hotels/city-summary/{city}
     def get_summary_by_city(self, request, city=None):
         ...
 ```
 
-#### _Query params_
-¿Queremos filtrar los hoteles según ciertos parámetros? Usamos _query params_.
-```python
-    @action(detail=False, methods=['get'])  # GET /hotels?name={name}&city={city}
-    def filter_hotels(self, request):
-        ...
-```
-
 
 <br>
 
-### 2.3. Cuidado con los solapamientos
+### 9.3. Cuidado con los solapamientos
 Mucho cuidado con los solapamientos de rutas, sobre todo con los _path params_. Vamos a ver un ejemplo. Si quisiéramos filtrar por nombre, utilizaríamos en principio un _query param_ `?name=nombre_que_sea`, pero vamos a poner un momento el ejemplo de que fuera con _path param_:
 
 Queremos un método que nos busque un hotel por nombre. No es uno de los métodos reservados, así que crearemos uno nuevo. En principio uno puede pensar en usar la ruta `/hotels/{name}`, sin embargo, se está pisando con la ruta del método reservado 'retrieve': `/hotels/{id}`. Django, en principio, no nos dejaría tener ambas rutas a la vez porque no las diferenciaría. Habría que optar, por tanto, por una nueva ruta única, algo como `/hotels/name/{name}`:
@@ -597,7 +609,7 @@ De nuevo, lo suyo sería un _query param_ en este caso.
 
 <br>
 
-### 2.4. URL names (reverse)
+### 9.4. URL names (reverse)
 Utilizaremos el parámetro url_name del decorador `@action` para definir el URL name de cada método. Para darnos la URL completa, la función `reverse` de Django utilizará el siguiente patrón: `{basename}-{url_name}`.
 
 Para reverse de ruta con _path params_, usamos `kwargs`:
@@ -616,9 +628,23 @@ Los URL names de los métodos reservados ya se han comentado.
 
 
 
+
+
 <br><br>
 
-## 3. Nomenclaturas métodos
+
+## 10. Controladores y servicios
+
+### 10.1. Estructura general de un método de un controlador
+(Decisión de diseño general)
+...
+
+
+<br>
+
+### 10.2. Nomenclaturas métodos
+Pensar luego mejor para cada caso y en función de si es controlador o servicio.
+
 Cada método se puede nombrear de veinte formas diferentes. Pero si tú dices get_prize_by_hotel ya no sabes si es el precio de un hotel, o un diccionario con el precio de cada hotel. Por tanto, no vamos a usar nunca By cuando hablemos de otra clase custom; reservaremos el By solo para atributos que no sean de clases custom. Para las clases custom usremos Of o For each, en función de si es para solo uno o para cada uno. Y así nos quitamosd de dudas si os parece.
 
 ### BY: encontrar un objeto o una colección de objetos dado un valor de uno de sus atributos que no es una clase custom
@@ -639,31 +665,28 @@ Cada método se puede nombrear de veinte formas diferentes. Pero si tú dices ge
 PD: los métodos de los ejemplos no siguen este formato, así que no les echéis cuenta en ese sentido.
 
 
+<br>
+    
+### 10.4. Estructura de request
+Importante recalcar que para acceder a sus objetos hay que usar puntos ".", NO acceder como un diccionario con "[]" o "get()".
+
+| Método                    | Descripción  |
+|---------------------------|--------------|
+| **request.data**          | Contains parsed data from the request body (useful for POST, PUT, PATCH).|
+| **request.query_params**  | Holds URL query parameters (e.g., ?key=value).|
+| **request.method**        | The HTTP method (e.g., "GET", "POST", "PUT").|
+| **request.user**          | The authenticated user making the request.|
+| **request.auth**          | Authentication details.|
+| **request.headers**       | A dictionary-like object of request headers.|
 
 
-<br><br>
+<br>
 
-## 4. Foreign keys
-En Django lo mejor no es cargar el objeto entero como en Java con el ORM de Hibernate. Es un poco diferente. Usamos `ForeignKey` que nos deja tanto el id como el objeto si queremos hacer la petición. Un resumen muy simplificado:
+### 10.5. Respuestas y excepciones
+raising y returning excepciones
+detail para errores y message para correctos
 
-Definición:
-```python
-from django.db import models
 
-class Hotel(models.Model):
-    name = models.CharField(max_length=255)
-
-class Room(models.Model):
-    hotel = models.ForeignKey(Hotel, on_delete=models.CASCADE, related_name="rooms")
-    number = models.IntegerField()
-```
-
-Uso:
-```python
-room = Room.objects.first()
-hotel_id = room.hotel_id  # Acceso directo al ID (más eficiente)
-hotel_obj = room.hotel    # Acceso al objeto completo (puede hacer query extra si no está en caché)
-```
 
 
 
