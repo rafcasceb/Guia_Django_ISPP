@@ -35,50 +35,20 @@
     - [9.2. Métodos no reservados del controlador](#92-métodos-no-resevados-del-controlador)
     - [9.3. Cuidado con los solapamientos](#93-cuidado-con-los-solapamientos)
     - [URL names (reverse)](#94-url-names-reverse)
-10. [Controladores y servicios]()
-11. [Tests]()
+10. [Controladores y servicios](#10-controladores-y-servicios)
+    - [10.1. Estructura general de un método de un controlador](#101-estructura-general-de-un-método-de-un-controlador)
+    - [10.2. Nomenclaturas métodos](#102-nomenclaturas-métodos)
+    - [10.3. Estructura de request](#103-estructura-de-request)
+    - [10.4. Respuestas y excepciones](#104-respuestas-y-excepciones)
+11. [Tests](#11-tests)
+    - [Comentarios generales](#111-comentarios-generales)
+    - [Tipos de creación de objetos](#112-tipos-de-creación-de-objetos)
+12. [Otros](#12-otros)
+    - [Seeders](#121-seeders)
+    - [Sesión y tokens](#122-sesión-y-tokens)
+    - [Pre-commit](#123-pre-commit)
+13. [Enlaces de interés](#13-enlaces-de-interés)
 
-
-
-<br><br><br>
-
------------
-## TEMPORAL (NOTAS PARA IR AÑADIENDO)
-
- - Tests
-	Cómo
-    explicar un poco el forzar logearse como app user
-    Diferenciar entre lo que pongo ahí abajo...
-    explicar el cambio en el settings.py para testear si hiciera falta. decir que luego se comenta los tokens
- - Otros
-    comentar lo de los seeders.
-    comentar los tokens (y explicar testing en postman no hace falta explicar que es para postman, hablar de rutas bearer token y ya) 
-    black .     para ejecutar black del precommit.
-    git commit --no-verify -m "..." -m "..."    para que no vaya el pre-commit
-
-
-
-diferencia entre estos dos (uno usaría por ejemplo user_id y el otro user)
-        self.hotel_owner = HotelOwner.objects.create(
-            user_id=self.app_user.id
-        )
-        self.valid_data = {
-            "name": "Hotel Paradise",
-            "address": "123 Sunshine Street",
-            "city": "Miami",
-            "description": "Un hotel lujoso en Miami.",
-            "hotel_owner": self.hotel_owner.id,
-        }
-        self.hotel_owner_model = HotelOwner(
-            user=...,
-            abc=...
-        )
-Lo que lleve object es base de datos
-
-
-
-
------------
 
 
 
@@ -448,12 +418,12 @@ En caso de *update*, también hay que pasarle la instancia actual para mantener 
 
 Por ejemplo:
 ```python
-    @staticmethod
-    def serialize_input_room_update(request, pk):
-        room = RoomService.retrieve_room(pk)
-        context = {"request": request}
-        serializer = RoomSerializer(instance=room, data=request.data, context=context)
-        return serializer
+@staticmethod
+def serialize_input_room_update(request, pk):
+    room = RoomService.retrieve_room(pk)
+    context = {"request": request}
+    serializer = RoomSerializer(instance=room, data=request.data, context=context)
+    return serializer
 ```
 
 
@@ -464,12 +434,12 @@ Para validar el contenido del serializador, hay que usar el método `is_valid()`
 
 Por ejemplo:
 ```python
-    @staticmethod
-    def validate_update_room(pk, input_serializer):
-        if not input_serializer.is_valid():
-            raise ValidationError(input_serializer.errors)
+@staticmethod
+def validate_update_room(pk, input_serializer):
+    if not input_serializer.is_valid():
+        raise ValidationError(input_serializer.errors)
 
-        # Sintactic validations...
+    # Sintactic validations...
 ```
 
 Como dato, el serializador directamente valida que las foreign keys existan en la base de datos. Sin embargo, no puede comprobar validaiones semánticas como que el objeto de la foreign key pertenezca al usuario en cuestión. Eso habría que comprobarlo a mano como las demás validaciones restantes.
@@ -482,17 +452,17 @@ Después de validar, crearemos o actualizaremos las entidades usando directament
 
 Por ejemplo:
 ```python
-    @staticmethod
-    def create_room(input_serializer):
-        room_created = input_serializer.save()
-        return room_created
+@staticmethod
+def create_room(input_serializer):
+    room_created = input_serializer.save()
+    return room_created
 ```
 
 ```python
-    @staticmethod
-    def update_room(pk, input_serializer):
-        room = RoomService.retrieve_room(pk)
-        return input_serializer.update(room, input_serializer.validated_data)
+@staticmethod
+def update_room(pk, input_serializer):
+    room = RoomService.retrieve_room(pk)
+    return input_serializer.update(room, input_serializer.validated_data)
 ```
 
 Para otras peticiones que no traigan datos en la petición y no haga falta usar serializadores para éstos, ya se llevará la acción de la forma que toque.
@@ -505,9 +475,9 @@ La mayoría de las rutas devuelven los objetos principales involucrados en la op
 
 Por ejemplo:
 ```python
-    @staticmethod
-    def serialize_output_room(room, many=False):
-        return RoomSerializer(room, many=many).data
+@staticmethod
+def serialize_output_room(room, many=False):
+    return RoomSerializer(room, many=many).data
 ```
 
 
@@ -523,8 +493,6 @@ La única excepcón de momento son los roles, los cuales llevarán anidados su `
 
 
 <br><br><br>
-
-> A PARTIR DE AQUÍ AÚN NO LO HE REHECHO. ES DE LA VERSIÓN ANTIUGA DEL DOCUMENTO.
 
 ## 9. Rutas
 
@@ -557,38 +525,38 @@ Podemos definir nuevos métodos del controlador con nombres no reservados. Hay v
 #### Añadir _paths_
 ¿Queremos todas las ciudades? Tan solo necesitamos un nuevo _path_.
 ```python
-    @action(detail=False, methods=['get'], url_path="cities")  # GET /hotels/cities
-    def get_all_cities(self, request):
-        ...
+@action(detail=False, methods=['get'], url_path="cities")  # GET /hotels/cities
+def get_all_cities(self, request):
+    ...
 ```
 
 ¿Queremos un atributo de un hotel, el nombre por ejemplo? Dejamos primero que filtre por id (detail=True) y luego añadimos un nuevo _path_ a la ruta.
 ```python
-    @action(detail=True, methods=['get'], url_path="name")  # GET /hotels/{id}/name
-    def get_name_by_hotel_id(self, request, pk=None):
-        ...
+@action(detail=True, methods=['get'], url_path="name")  # GET /hotels/{id}/name
+def get_name_by_hotel_id(self, request, pk=None):
+    ...
 ```
 
 #### _Query params_
 ¿Queremos filtrar los hoteles según ciertos parámetros? Usamos _query params_. Vienen en la *request*.
 ```python
-    @action(detail=False, methods=['get'])  # GET /hotels?name={name}&city={city}
-    def filter_hotels(self, request):
-        ...
+@action(detail=False, methods=['get'])  # GET /hotels?name={name}&city={city}
+def filter_hotels(self, request):
+    ...
 ```
 O podemos ponerlo en el método `list` en función del caso:
 ```python
-    def list(self, request):
-        filters = request.query_params.dict()  # URL filters checked
-        ...
+def list(self, request):
+    filters = request.query_params.dict()  # URL filters checked
+    ...
 ```
 
 #### _Path params_ (menos común)
 ¿Queremos un resumen de los hoteles de una ciudad (por decir algo)? Añadimos un nuevo _path_ a la ruta y recibimos un _path param_ para indicar el nombre. Aunque suele ser mejor filtrar por *query params*.
 ```python
-    @action(detail=False, methods=['get'], url_path="city-summary/(?P<city>[\w\s-]+)")  # GET /hotels/city-summary/{city}
-    def get_summary_by_city(self, request, city=None):
-        ...
+@action(detail=False, methods=['get'], url_path="city-summary/(?P<city>[\w\s-]+)")  # GET /hotels/city-summary/{city}
+def get_summary_by_city(self, request, city=None):
+    ...
 ```
 
 
@@ -600,9 +568,9 @@ Mucho cuidado con los solapamientos de rutas, sobre todo con los _path params_. 
 Queremos un método que nos busque un hotel por nombre. No es uno de los métodos reservados, así que crearemos uno nuevo. En principio uno puede pensar en usar la ruta `/hotels/{name}`, sin embargo, se está pisando con la ruta del método reservado 'retrieve': `/hotels/{id}`. Django, en principio, no nos dejaría tener ambas rutas a la vez porque no las diferenciaría. Habría que optar, por tanto, por una nueva ruta única, algo como `/hotels/name/{name}`:
 
 ```python
-    @action(detail=False, methods=['get'], url_path="name/(?P<name>[^/.]+)")  # GET /hotels/name/{name}
-    def get_hotel_by_name(self, request, name=None):
-        ...
+@action(detail=False, methods=['get'], url_path="name/(?P<name>[^/.]+)")  # GET /hotels/name/{name}
+def get_hotel_by_name(self, request, name=None):
+    ...
 ```
 De nuevo, lo suyo sería un _query param_ en este caso.
 
@@ -630,14 +598,35 @@ Los URL names de los métodos reservados ya se han comentado.
 
 
 
-<br><br>
+<br><br><br>
 
 
 ## 10. Controladores y servicios
 
 ### 10.1. Estructura general de un método de un controlador
-(Decisión de diseño general)
-...
+Se intentará ceder toda la lógica de negocio a los servicios, manteniendo los controladores bastante concisos, encargándose simplemente de llamar en cada paso al método del servicio correspondiente. Por la lógica ya explicada en la sección 3.2, La estructura genérica por norma del proceso de un *endpoint* es la siguiente:
+1. Authorize
+2. Serialize input
+3. Validate
+4. Perform
+5. Serialize output
+6. Return
+
+Por supuesto, endpoints como los de `retrieve` o `list` no necesitan los pasos 2 y 3. O el `delete` no necesita 2, 3, ni 4. Se puede añadir algún paso adicional si la casuística particular del caso en cuestión lo necesita.
+
+Un ejemplo sería el siguiente:
+
+```python
+def update(self, request, pk=None):
+    RoomService.authorize_action_room(request, pk)
+    input_serializer = RoomService.serialize_input_room_update(request, pk)
+    RoomService.validate_update_room(pk, input_serializer)
+    room_updated = RoomService.update_room(pk, input_serializer)
+    output_serializer_data = RoomService.serialize_output_room(room_updated)
+    return Response(output_serializer_data, status=status.HTTP_200_OK)
+```
+
+Lo servicios se encargarán del resto, de forma muy organizada. Se recomienda poner algunos comentarios para separar los métodos de las clases de los servicios según las peticiones HTTP para los que valen. Puede haber sección de generales u otros.
 
 
 <br>
@@ -645,7 +634,7 @@ Los URL names de los métodos reservados ya se han comentado.
 ### 10.2. Nomenclaturas métodos
 Pensar luego mejor para cada caso y en función de si es controlador o servicio.
 
-Cada método se puede nombrear de veinte formas diferentes. Pero si tú dices get_prize_by_hotel ya no sabes si es el precio de un hotel, o un diccionario con el precio de cada hotel. Por tanto, no vamos a usar nunca By cuando hablemos de otra clase custom; reservaremos el By solo para atributos que no sean de clases custom. Para las clases custom usremos Of o For each, en función de si es para solo uno o para cada uno. Y así nos quitamosd de dudas si os parece.
+Cada método se puede nombrear de veinte formas diferentes. Pero si tú dices get_prize_by_hotel ya puede que no sepas si es el precio de un hotel, o un diccionario con el precio de cada hotel. Por tanto, no vamos a usar nunca By cuando hablemos de otra clase custom; reservaremos el By solo para atributos que no sean de clases custom. Para las clases custom usremos Of o For each, en función de si es para solo uno o para cada uno. Y así nos quitamos de dudas si os parece.
 
 ### BY: encontrar un objeto o una colección de objetos dado un valor de uno de sus atributos que no es una clase custom
 - General: `get_<object>_by_<attribute>`
@@ -664,10 +653,12 @@ Cada método se puede nombrear de veinte formas diferentes. Pero si tú dices ge
 
 PD: los métodos de los ejemplos no siguen este formato, así que no les echéis cuenta en ese sentido.
 
+Aparte, no vale poner `list()`y listo, sino que hay que ser un poco más descriptivo, como `list_hotels()`, no hace falta tan solo complicarse. Pero que indique el nombre. En principio, que cada método de los servicios sean únicos en nombre.
+
 
 <br>
     
-### 10.4. Estructura de request
+### 10.3. Estructura de request
 Importante recalcar que para acceder a sus objetos hay que usar puntos ".", NO acceder como un diccionario con "[]" o "get()".
 
 | Método                    | Descripción  |
@@ -682,18 +673,184 @@ Importante recalcar que para acceder a sus objetos hay que usar puntos ".", NO a
 
 <br>
 
-### 10.5. Respuestas y excepciones
-raising y returning excepciones
-detail para errores y message para correctos
+### 10.4. Respuestas y excepciones
+
+Para las respuestas de los métodos de los controladores usaremos por defecto `Response`, con el status de `rest_framework`, en vez de puesto a mano. Esto solo se hace en los controladores.
+
+```python
+from rest_framework import status #, viewsets
+from rest_framework.response import Response
+
+def retrieve(self, request, pk=None):
+    ...
+    return Response(output_serializer_data, status=status.HTTP_200_OK)
+
+def create(self, request):
+    ...
+    return Response(output_serializer_data, status=status.HTTP_201_CREATED)
+
+def destroy(self, request, pk=None):
+    ...
+    return Response(status=status.HTTP_204_NO_CONTENT)
+```
+
+En los servicios se podrán lanzar excepciones. Sin embargo, no las pondremos igual que las respuestas, "tan a mano" por así decirlo. Usaremos las excepciones de rest_framework.exceptions, en principio. Internamente, ya nos devuelven una Response con el status adecuado, por lo que son prácticamente equivalentes. Por ejemplo:
+
+```python
+from rest_framework.exceptions import NotFound, PermissionDenied, ValidationError
+
+@staticmethod
+def validate_create_room(input_serializer):
+    if not input_serializer.is_valid():
+        raise ValidationError(input_serializer.errors)
+
+    ...
+
+    if room_type.is_archived:
+        raise ValidationError({"room_type": "Invalid room type."})
+
+    if name and Room.objects.filter(room_type__hotel_id=hotel_id, name=name).exists():
+        raise ValidationError({"name": "Name in use by same hotel."})
+```
+
+PD: ValidationError se puede importar de varios sitios. Hay que estudiar las diferencias.
+
+No se hará `return`, sino `raise`. Django Rest Framework ya las recoje y las procesa como tiene que ser.
+
+Si por algún motivo hiciese falta escribir a mano la respueta de un error, se escribiría `{"detail": ...}`. En el caso de una respueta correcta (casi imposible), usaríamos `{"message": ...}`.
 
 
 
 
 
 
-<br><br>
 
-## 5. Enlaces de interés
+<br><br><br>
+
+## 11. Tests
+
+### 11.1. Comentarios generales
+Tests bien hechos. Con cobertura, que funcionen como tienen que funcionar y que prueben cosas de verdad; ese es el fundamento.
+
+No usamos `pytest`, sino el sistema de testeo propio de Django. En la sección 2.5 podemos ver cómo ejecutar los tests.
+
+Podemos hacer un método `setUp` con objetos o acciones que se harán antes de cada test.
+
+También podemos usar `subTest` para parametrizar múltiples tests a la vez. Especialmente últiles para rangos de variables en modelos. Por ejemplo:
+```python
+def test_create_room_invalid_name(self):
+    invalid_names = ["", None, "A" * 51]
+
+    for name in invalid_names:
+        with self.subTest(name=name):
+            room = Room(name=name, room_type=self.room_type)
+            with self.assertRaises(ValidationError):
+                room.full_clean()
+```
+
+En la inmensa mayoría de tests de controladores (views) nos tenemos que autenticar. Para ello, podemos definir en el setup (salvo excecpiones) un usuario y forzar la autenticación con él. El método para esto último sería:
+
+```python
+self.client.force_authenticate(user=self.app_user)  # siendo app_user el usuario AppUser previamente definido (no el usuario de rol)
+```
+Importante autenticarse con el usuario de AppUser, no con el de rol como podría ser su HotelOwner.
+
+Se pueden usar herramientas externas cómodas y útiles como Postman. Hay que tener en cuenta el uso de tokens. En la sección 12.2 se habla más de ellos. Se deja un conjunto de consultas de Postman en el Microsoft Teams, para que el quiera probar que no tenga que partir de cero.
+
+
+<br>
+
+### 11.2. Tipos de creación de objetos
+En los tests solemos tener que crear objetos. Hay tres maneras fáciles que yo sepa ahora, pero hay que tener cuidado con no confundirlas, porque funcionan un poco diferentes y utilizan nomenclaturas diferentes.
+
+#### A nivel de BD
+Todo lo que tenga la expresión `<NOMBRE_ENTIDAD>.objects` está relacionado a la base de datos. Usa, como podemos ver con `hotel_owner_id`, el nombre de los atributos en la BD. Ya nos lo guarda en la base de datos.
+
+```python
+self.hotel = Hotel.objects.create(
+    name=...,
+    address=...,
+    hotel_owner_id=...,
+)
+```
+
+#### A nivel de Python solo
+La creación normal en Django. Como podemos ver con `hotel_owner`, usa el nombre de los atributos en Django. Pero no está guardado en la base de datos. Para eso simplemente hacemos `full_clean()` y `save()` como ya hemos visto.
+
+```python
+self.hotel_model = Hotel(
+    name=...,
+    address=...,
+    hotel_owner=...,
+    ...
+)
+```
+
+#### En JSON
+Creamos el JSON a mano. No hay más magia. Tendremos que usar luego el serializador. Por tanto, tenemos que usar los nombres de los atributos de Django, como podemos ver con `hotel_owner`.
+
+Esto digamos que es lo que se hace desde el frontend (creo), o al menos lo que le llega a la API y con lo que se puede probar en Postman.
+
+```python
+self.valid_data = {
+    "name": ...,
+    "address": ...,
+    "hotel_owner": ...,
+    ...
+}
+```
+
+
+
+
+
+
+<br><br><bR>
+
+## 12. Otros
+
+### 12.1. Seeders
+Los seeders al ejecutarse rellenan la base de datos con ejemplos. Si hacemos el comando base, los seeds se añaden a los datos anteriores. Si se quiere borrar todos los datos guardados se usa la versión *clean*.
+
+Los comandos son los siguientes:
+```bash
+python manage.py seed
+python manage.py seed --clean
+```
+
+
+<br>
+
+### 12.2. Sesión y tokens
+El inicio de sesión funciona mediante el uso de tokens (una cadena larga de caracteres). Un token es un identificador único de un usuario, durante el tiempo de vida del token (10 mins) y se ha de incluir en las peticiones a la API para poder autenticarse (y ver su autorización). Al iniciar sesión se otorga un token nuevo. También existen tokens de refresco con mayor tiempo de vida (2 días) para solicitar un token nuevo.
+
+| Operación | URL | Cuerpo | Token | Descripción |
+|-----------|-----|--------|-------|-------------|
+| Registro | http://localhost:8000/auth/register/ | Datos del usuario para el POST | - | Crea el usuario del rol indicado en la BD, sin iniciar sesión |
+| Inicio de sesión | http://localhost:8000/auth/login/ | Username y password | Token normal | Inicia sesión y devuelve un token nuevo y un token para refresco |
+| Refrescar token | http://localhost:8000/auth/token/refresh/ | - | Token de refresco | Genera un nuevo token para el usuario asociado al token de refresco |
+| Información del usuario | http://localhost:8000/auth/user-info/ | - | Token normal | Los datos del usuario |
+
+En Postman se pone el token en la pestaña de Authorization, como Bearer Token. Se puede poner como variable para no tener que estar cambiándolo en todas las peticiones.
+
+
+<br>
+
+### 12.3. Pre-commit
+Hay un pre-commit que comprueba los commits antes de confimarlos y revisa y unifica ciertos aspectos, especialmente visuales.
+
+A veces una parte del pre-commit llamada `black` falla. Haremos lo siguiente:
+- Ejecutar comando `black .`, para ejecutarlo a mano.
+- Nos saltamos el precommit como último recurso: `git commit --no-verify -m "..." -m "..."`.
+
+
+
+
+
+
+<br><br><br>
+
+## 13. Enlaces de interés
 
 Poned otros si queréis.
 
