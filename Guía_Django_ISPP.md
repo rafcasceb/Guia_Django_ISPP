@@ -13,6 +13,8 @@
     - [3.1. Estructura de carpetas](#31-estructura-de-carpetas)
     - [3.2. Funcionalidades y flujo de información](#32-funcionalidades-y-flujo-de-información)
 4. [Comentarios sobre modelos](#4-comentarios-sobre-modelos)
+    - [4.1. Comentarios generales](#41-comentarios-generales)
+    - [4.2. Usuarios](#42-usuarios)
 5. [Validación y autorización](#5-validación-y-autorización)
     - [Validaciones semánticas vs validaciones sintácticas](#51-validaciones-semánticas-vs-validaciones-sintácticas)
     - [Validaciones del modelo](#52-validaciones-del-modelo)
@@ -21,7 +23,12 @@
     - [Autorización](#55-autorización)
 6. [Permisos de roles](#6-permisos-de-roles)
 7. [Archivado](#7-archivado)
-8. [Serializadores]()
+8. [Serializadores](#8-serializadores)
+    - [8.1. Serializar input](#81-serializar-input)
+    - [8.2. Validar serializador](#82-validar-serializador)
+    - [8.3. Ejecutar acción](#83-ejecutar-acción)
+    - [8.4. Serializar output](#84-serializar-output)
+    - [8.5. Serializar foreign keys](#85-serializar-foreign-keys)
 9. [Enrutamiento]()
 10. [Controladores y servicios]()
 11. [Tests]()
@@ -37,10 +44,6 @@ DECISIONES DE DISEÑO
 
 COMENTAR LO DE LAS / al final de las URLS
 
- - Serializadores
-	Cómo y cuándo usar el json
-	Explicar el base_serializer y por qué ya no hacen falta los required
-	Comentar lo del create y el update kwargs
  - Enrutamiento 
 	... Lo que ya tengo
  - Controladores y servicios
@@ -53,7 +56,6 @@ COMENTAR LO DE LAS / al final de las URLS
     Diferenciar entre lo que pongo ahí abajo...
     explicar el cambio en el settings.py para testear si hiciera falta. decir que luego se comenta los tokens
  - Otros
-    (validations) no hace falta revisar foreign keys manualmente porque el serializer.valid ya lo hace.
     comentar lo de los seeders.
     comentar los tokens (y explicar testing en postman no hace falta explicar que es para postman, hablar de rutas bearer token y ya) 
     black .     para ejecutar black del precommit.
@@ -101,6 +103,8 @@ Lo que lleve object es base de datos
 Esto es una guía que he hecho para que todos más o menos sigamos los mismos criterios básicos en cuanto de la estructura de los archivos y las rutas de la API. No soy para nada experto en Django. He echado un buen rato para estudiar cuáles eran las mejores opciones y creo el sistema que propongo ha quedado bastante lógico y robusto, pero cualquiera que tenga otra propuesta de lo que sea, que lo diga. Si preferís meter las URLS a mano en el urls.py en vez de usar el Django Rest Framework (DRF), decidlo; ambos tienen sus ventajas e inconvenientes. Si cualquiera de las cosas que haya dicho por aquí os parece una tontería o simplemente innecesario, decidlo también. Ni se os ocurra callaros.
 
 El enlace al repositorio con algunos ejemplos: https://github.com/rafcasceb/Guia_Django_ISPP. Fijaos en cómo hacer la estructuras de las carpetas y los métodos, pero desde entonces hemos cambiado algunas cosas como el formato de las rutas por ejemplo. EJEMPLOS ALGO ANTICUADOS.
+
+
 
 
 
@@ -195,8 +199,6 @@ Cuidado con los *app names* porque no son tal cual los nombres de las carpetas. 
 
 
 
-
-
 <br><br><br>
 
 ## 3. Estructura
@@ -251,7 +253,9 @@ Las entidades se definen en el `models.py` usando el lenguaje de Django.
 
 #### Serializadores
 - Usaremos `serializers.py`.
-- Transforman las instancias de las entidades en objetos JSON. 
+- Define un formato de objeto JSON y transforma una instancia de entidad en un objeto JSON y viceversa.
+- Transforman las instancias de las entidades a un objeto JSON.
+- Transforman otros objetos JSON al formato del JSON
 - Cuando esta API tenga que devolver un objeto como respuesta a una petición, no lo hará tal cual usando el objeto de Django, sino que los transformaremos a objetos JSON para que sea más cómodo trabajar con ellos desde el frontend. Para ello simplemente aplicaremos el serializador al objeto de Django antes de enviarlo.
 - ADEMÁS, cuando a la API le llegue un objeto con datos para realizar operaciones como la creación o la actualización de objetos, no se usarán los datos sin más, sino que hay que comprobar la validez de los datos en estructura y contenido.
     - Los serializadores nos permiten implementar validaciones sintácticas, así que implementaremos las mismas que definimos en el modelo de cara a la base de datos, pero esta vez serán aplicados de cara al *input* de las peticiones. Simplemente aplicaremos el serializador sobre el objeto JSON que nos llegue.
@@ -294,9 +298,12 @@ Las entidades se definen en el `models.py` usando el lenguaje de Django.
 
 
 
+
 <br><br><br>
 
 ## 4. Comentarios sobre modelos
+
+### 4.1. Comentarios generales
 
 Los atributos de texto (strings) serán definidos con el atributo de Django `CharField`, no con `TextField`. Tienen sus diferencias, pero para nuestros requisitos, el primero nos vale mejor.
 
@@ -311,25 +318,20 @@ Como ya se ha comentado, las validacinoes de los modelos se aplican de cara a la
 | `save()`      | ❌ No (a menos que se sobrescriba) | ❌ No (a menos que se sobrescriba) | ❌ No (a menos que se sobrescriba) | ✅ Sí |
 
 
+### 4.2. Usuarios
 
-<EXPLICAR DIFERENTES USUARIOS>------------------------------------------- 
+Los usuarios se implementarán mediante un `AppUser`. Esta entidad está configurada para que Django la considere la entidad base de usuarios, por lo que los registros ser harán con esta entidad.
 
---------------
------------
-----------
------------------
------------
------------
--------------
-----------
+A la vez, tenemos tres tipos diferentes de usuarios que representan roles diferentes: `Admin`, `HotelOwner` y `Customer`. Cada uno de estos estará asociado a un `AppUser`.
+
+
+
+
 
 
 <br><br><br>
 
 ## 5. Validación y autorización
-
-
-<br>
 
 ### 5.1. Validaciones semánticas vs validaciones sintácticas
 
@@ -411,6 +413,106 @@ Cómo hacer el archivado en el futuro (tengo ejemplos)
 
 
 
+
+
+<br><br><br>
+
+# 8. Serializadores
+Recordamos que valen para transformar una instancia de una entidad en un JSON y viceversa, y además permite validar semánticamente los valores.
+
+## 8.1. Serializar input
+Las peticiones POST, PUT y PATCH envían un JSON con datos. Para validarlos y tratarlos, aplicaremos el serializador sobre estos datos.
+
+En función de la petición, habrá campos requeridos, campos permitidos y campos no permitidos. Por ejemplo, por norma general los POST deben incluir prácticamente todos los campos, salvo el ID que no debe procesarse; los PUT tienen que incluir todos los campos editables; y los PATCH pueden incluir cualquier campo editable, sin tener que estar todos.
+
+Para esto se ha creado la clase `BaseSerializer`, la cual será extendida por todos los serializadores, y permite definir de forma muy sencilla estas restricciones. Ya no hace falta definir manualmente en cada atributo si está requerido o no, sino con unas listas.
+
+```python
+class RoomSerializer(BaseSerializer):
+
+    fields_required_for_post = ["name", "room_type"]
+    fields_editable = ["name"]
+    fields_not_readable = []
+
+    class Meta:
+        # Serializer definition...
+```
+
+Para que funcione esta lógica que depende del método HTTP, hay que pasarle el contexto de la petición al serializador.
+
+En caso de *update*, también hay que pasarle la instancia actual para mantener los datos no incluidos en la petición.
+
+Por ejemplo:
+```python
+    @staticmethod
+    def serialize_input_room_update(request, pk):
+        room = RoomService.retrieve_room(pk)
+        context = {"request": request}
+        serializer = RoomSerializer(instance=room, data=request.data, context=context)
+        return serializer
+```
+
+
+<br>
+
+## 8.2. Validar serializador
+Para validar el contenido del serializador, hay que usar el método `is_valid()`. 
+
+Por ejemplo:
+```python
+    @staticmethod
+    def validate_update_room(pk, input_serializer):
+        if not input_serializer.is_valid():
+            raise ValidationError(input_serializer.errors)
+
+        # Sintactic validations...
+```
+
+Como dato, el serializador directamente valida que las foreign keys existan en la base de datos. Sin embargo, no puede comprobar validaiones semánticas como que el objeto de la foreign key pertenezca al usuario en cuestión. Eso habría que comprobarlo a mano como las demás validaciones restantes.
+
+
+<br>
+
+## 8.3. Ejecutar acción
+Después de validar, crearemos o actualizaremos las entidades usando directamente los serializadores, sin tener que sacar los datos manualmente, o siquiera sacar la instancia.
+
+Por ejemplo:
+```python
+    @staticmethod
+    def create_room(input_serializer):
+        room_created = input_serializer.save()
+        return room_created
+```
+
+```python
+    @staticmethod
+    def update_room(pk, input_serializer):
+        room = RoomService.retrieve_room(pk)
+        return input_serializer.update(room, input_serializer.validated_data)
+```
+
+Para otras peticiones que no traigan datos en la petición y no haga falta usar serializadores para éstos, ya se llevará la acción de la forma que toque.
+
+
+<br>
+
+## 8.4. Serializar output
+La mayoría de las rutas devuelven los objetos principales involucrados en la operación. Simplemente se aplica el serializador sobre la instancia. Se indicará si son varias instancias o una sola.
+
+Por ejemplo:
+```python
+    @staticmethod
+    def serialize_output_room(room, many=False):
+        return RoomSerializer(room, many=many).data
+```
+
+
+<br>
+
+## 8.5. Serializar *foreign keys*
+Como norma general, en las *foreign keys* no se serializará la entidad entera, sino solo su ID.
+
+La única excepcón de momento son los roles, los cuales llevarán anidados su `AppUser` al completo, por comodidad.
 
 
 
