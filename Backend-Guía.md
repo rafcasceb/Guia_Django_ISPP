@@ -90,9 +90,14 @@ Set-ExecutionPolicy -Scope Process -ExecutionPolicy Bypass
 <br>
 
 ### 2.2. Ejecución general
-Importante que todos los paquetes de Python deben tener un archivo `__init__.py` para poder ser reconocidos.
+Importante que todos los paquetes de Python deben tener un archivo `__init__.py` para poder ser reconocidos, incluyendo los de tests y migraciones.
 
-Para poder lanzar el proyecto, los tests o las migraciones hay que cambiar el directorio a `\backend`.
+Para poder lanzar el proyecto, los tests o las migraciones hay que cambiar el directorio a `\backend` y entrar en el entorno virtual.
+
+Para ejecutar la aplicación:
+```bash
+python manage.py runserver
+```
 
 
 <br>
@@ -123,6 +128,8 @@ python manage.py migrate
 ```
 
 Sería raro, pero se podría dar que haya habido cambios grandes en las migraciones y no se pueda migrar directamente. Lo solución más normal es borrar la base de datos manualmente (en Heidi, DBeaver o lo que sea), crearla una nueva (mismo nombre, claro) y migrar de nuevo. Debería funcionar.
+
+Si da problema porque pide un valor por defecto nuevo para un atributo para aquellos registros ya existen en la BD, pero ya habéis borrado la BD, es posible que sea por culpa del caché. Borrad la carpeta `__pycache__.py` de las migraciones y de la entidad en cuestión, y volvéis a migrar.
 
 
 <br>
@@ -732,12 +739,41 @@ def validate_create_room(input_serializer):
         raise ValidationError({"name": "Name in use by same hotel."})
 ```
 
-PD: ValidationError se puede importar de varios sitios. Hay que estudiar las diferencias.
+PD: ValidationError se puede importar de varios sitios, pero:
+- En servicios y controladores `from rest_framework.exceptions import ValidationError`.
+- En modelos `from django.core.exceptions import ValidationError`.
 
-No se hará `return`, sino `raise`. Django Rest Framework ya las recoje y las procesa como tiene que ser.
+Para las excepciones no se hará `return`, sino `raise`. Django Rest Framework ya las recoje y las procesa como tiene que ser.
 
-Si por algún motivo hiciese falta escribir a mano la respueta de un error, se escribiría `{"detail": ...}`. En el caso de una respueta correcta (casi imposible), usaríamos `{"message": ...}`.
+`raise ValidationError("anything")` devuelve `{"detail": "anything"}`.
 
+`raise ValidationError({"any_key": "any_value"})` devuelve `{"any_key": "any_value"}`.
+
+Si por algún motivo hiciese falta escribir a mano la respueta de un error no asociado a un campo en específico, se escribiría `{"detail": ...}`. En el caso de una respueta correcta (menos probable), usaríamos `{"message": ...}`.
+
+
+<br>
+
+### 10.5. Obtención de usuarios de la petición
+
+#### FK con usuario
+Hay objetos que tienen FK con un usuario o un rol (hotel_owner o customer), y para ser creados necesitan la FK.
+Por ejemplo, Hotel con HotelOwner. ¿Se podría pasar el hotel_owner_id en el body de la petición? Sí, pero no lo vamos a hacer así. Un hotel solo lo puede crear su hotel owner, y su hotel owner tiene que ser el que haga la petición. Por tanto, en `request.user` ya tenemos el usuario que buscamos. Nos viene el AppUser, así que sin problemas sacamos su HotelOwner o Customer. 
+
+¿Cómo lo asignamos al objeto? Pues se podrían seguir varias estrategias, pero lo vamos a asignar en el paso de "serialize input". Ahí le metemos el campo pertinente con el ID del usuario y lo metemos en el serializador y listo; ya seguimos como siempre.
+
+#### ID de usuario en URL (explícito) vs ID de usuario en request (implícito)
+Hay acciones que requieren el ID en su ruta, en un principio. Puede ser, por ejemplo, `hotel-owners/{id}/hotels`, para obtener sus hoteles, o `hotel-owners/{id}/bookings`, para sus reservas. A esto le llamaremos "ID explícito en URL".
+
+Como ya hemos visto, hay otra forma de acceder al ID del usuario, que es mediante `request.user`. A esto le llamaremos "ID implícito en request". Por tanto, podemos cambiar esas rutas y usar algo como `hotel-owners/my-hotels` o `hotel-owners/my-bookings`. Al fin y al cabo, solo el hotel owner en cuestión puede acceder a estas operaciones.
+
+La forma preferida es "ID implícito en request". Será la que hagamos en principio.
+
+No obstante, AppAdmin no podría acceder a esas rutas de "ID implícito en request", pues está autenticado en la request como el admin que es, no como el hotel owner que quiere ver. Por tanto, en caso de querer que admin acceda a esta información tendremos que crear las dos versiones, tanto la "ID implícito en request" para el usuario como "ID explícito en URL" para el admin.
+
+¿Por qué no usar solo "ID explícito en URL", ya que vale para los dos? Buena pregunta. Salió en votación que no. 
+
+¿Podría aún así hotel owner usar la ruta "ID explícito en URL" también, es decir usar ambas rutas? De momento sí, se permitirá a hotel owner usar las dos, mientras que admin solo "ID explícito en URL".
 
 
 
