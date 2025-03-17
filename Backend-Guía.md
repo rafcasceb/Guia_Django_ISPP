@@ -365,7 +365,7 @@ La validación se encarga de los cambios que va a realizar la operación, compro
 <br><br><br>
 
 ## 6. Permisos de roles
-	 is staff and is superuser por defecto false
+is staff and is superuser por defecto false
 Los usuarios que tenemos y cómo implementar roles
 
 
@@ -376,8 +376,6 @@ Los usuarios que tenemos y cómo implementar roles
 <br><br><br>
 
 ## 7. Archivado
-
-### 7.1. Definición de funcionalidad de archivado
 Un usuario tiene derecho a poder solicitar el borrado de sus datos. Por ejemplo, un HotelOwner puede borrar su cuenta de usuario (HotelOwner+AppUser), sus hoteles, sus room types y sus rooms.
 
 Sin embargo, las reservas (*bookings*) son una excepción. Al ser un contrato entre dos partes, ha de permanecer por ley auditable durante 3 años. No solo para ambos usuarios, sino para Pawtel también en caso de cuestiones legales.
@@ -398,21 +396,13 @@ En resumen:
 - Si un objeto archivado se borra porque sus bookings ya tienen más de 3 años, las bookings por consecuencia se tienen que borrar también porque son hijos de esos objetos, ¿vale? Cuidado con el orden de borrado cómo lo hacemos, que no quiero líos. No es para nada difícil, pero dadle una pensadita.
 - Los bookings de aquellos objetos no borrados se pueden quedar indefinidamente. 
 
-Si se os ocurre alguna forma más fácil, proponedla y lo hablamos.
-
-
-<br>
-
-### 7.2. Implementación de funcionalidad de archivado
-
 Hotel, RoomType y Room usarán el atributo `is_archived`.
 
 AppUser usará el atributo `is_active`, que viene ya en los usuarios de Django.
 Cuidado, porque significa lo opuesto: is_active <-> not is_archived.
 
+Si se os ocurre alguna forma más fácil, proponedla y lo hablamos.
 
-
-Cómo hacer el archivado en el futuro (tengo ejemplos)
 
 
 
