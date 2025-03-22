@@ -47,6 +47,7 @@
     - [Seeders](#121-seeders)
     - [Sesión y tokens](#122-sesión-y-tokens)
     - [Pre-commit](#123-pre-commit)
+    - [POST HotelImages en Postman](#124-post-hotelimages-en-postman)
 13. [Enlaces de interés](#13-enlaces-de-interés)
 
 
@@ -225,7 +226,7 @@ Las entidades se definen en el `models.py` usando el lenguaje de Django.
 - ADEMÁS, cuando a la API le llegue un objeto con datos para realizar operaciones como la creación o la actualización de objetos, no se usarán los datos sin más, sino que hay que comprobar la validez de los datos en estructura y contenido.
     - Los serializadores nos permiten implementar validaciones sintácticas, así que implementaremos las mismas que definimos en el modelo de cara a la base de datos, pero esta vez serán aplicados de cara al *input* de las peticiones. Simplemente aplicaremos el serializador sobre el objeto JSON que nos llegue.
     - Además, en función del método HTTP podemos restringir los campos del JSON para que solo se actualizen, creen o lean los campos deseados.
-- Cuando una entidad tenga relación con otra, como norma general en el JSON solo se escribirá el ID (que será su PK/FK en principio). Podrá haber alguna excepción con entidades auxiliares.
+- Cuando una entidad tenga relación con otra, como norma general en el JSON solo se escribirá el ID (que será su PK/FK en principio). Podrá haber alguna excepción con entidades auxiliares. Actual y excecpionalmente, por facilidad, `Hotel` incluye sus `HotelImages`, y `Booking` incluye su `Hotel`.
 - Todos los nombres de los objetos del JSON se escribirán en snake_case.
 
 #### Rutas
@@ -739,17 +740,19 @@ def validate_create_room(input_serializer):
         raise ValidationError({"name": "Name in use by same hotel."})
 ```
 
-PD: ValidationError se puede importar de varios sitios, pero:
+PD: ValidationError se puede importar de varios sitios, pero usaremos:
 - En servicios y controladores `from rest_framework.exceptions import ValidationError`.
 - En modelos `from django.core.exceptions import ValidationError`.
 
-Para las excepciones no se hará `return`, sino `raise`. Django Rest Framework ya las recoje y las procesa como tiene que ser.
+Para las excepciones no se hará `return`, sino `raise`. Django Rest Framework ya las recoje y las procesa como tiene que ser. 
 
-`raise ValidationError("anything")` devuelve `{"detail": "anything"}`.
+En cuanto al formato de las respuestas:
+- En caso de devolver un objeto como respuesta positiva, devolveremos el objeto en sí.
+- En casos de reponder con un valores calculados como sería `is_available`, devolvemos `{"is_available": ...}`.
+- En casos de excepciones u otros mensajes, devolvemos `{"detail": ...}`.
+    - Todas las excepciones de DRF que usamos, devuelven por defecto la clave `detail` como queremos: `raise NotFound("anything")` devuelve `{"detail": "anything"}`.
+    - ValidatinoError no. Hay que pasarle una clave. Siempre que sea posible, usaremos el nombre de los atributos u objetos en cuestión en los que estén los errores, seguidos del mensaje. Usaremos el nombre de la variable, es decir `hotel_owner`, no `Hotel Owner`. En casos excepcionales, podemos usar si no la clave `detail`. `raise ValidationError({"any_key": "any_value"})` devuelve `{"any_key": "any_value"}`.
 
-`raise ValidationError({"any_key": "any_value"})` devuelve `{"any_key": "any_value"}`.
-
-Si por algún motivo hiciese falta escribir a mano la respueta de un error no asociado a un campo en específico, se escribiría `{"detail": ...}`. En el caso de una respueta correcta (menos probable), usaríamos `{"message": ...}`.
 
 
 <br>
@@ -901,6 +904,10 @@ A veces una parte del pre-commit llamada `black` falla. Haremos lo siguiente:
 - Nos saltamos el precommit como último recurso: `git commit --no-verify -m "..." -m "..."`.
 
 
+<br>
+
+### 12.4. POST HotelImages en Postman
+En Postman, para crear una imagen hay que pasar el archivo. No se hace usando el formato JSON, sino seleccionando el formato `form-data` en Body. El nombre de la clave `image`, y en el valor, subir una imagen.
 
 
 
