@@ -2,7 +2,7 @@
 ## Notas
 N.A. = No archivados
 
-* = Comprobar bookings asociadas recientes y si sí, archivar en vez de borrar
+`*` = Comprobar bookings asociadas recientes y si sí, archivar en vez de borrar
 
 Comprobar siempre que el usuario que hace la operación no esté archivado
 
