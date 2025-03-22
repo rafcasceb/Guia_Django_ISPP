@@ -82,6 +82,8 @@ Si nadie puede, poner un forbidden directamente en el controlador (no borrar el 
 
 ## Hotel
 
+### Hotel
+
 | Método                        | Customer              | HotelOwner            | AppAdmin              |
 |-------------------------------|-----------------------|-----------------------|-----------------------|
 | list                          | Todos N.A.            | Todos N.A.            | Todos                 |
@@ -94,12 +96,28 @@ Si nadie puede, poner un forbidden directamente en el controlador (no borrar el 
 | get bookings of hotel         | --                    | Propios N.A.          | Todos                 |
 
 
+### HotelImage 
+
+Always with respect to their hotels.
+
+| Método                        | Customer              | HotelOwner            | AppAdmin              |
+|-------------------------------|-----------------------|-----------------------|-----------------------|
+| list of hotel                 | --                    | Propios N.A.          | Todos                 |
+| retrieve                      | --                    | Propios N.A.          | Todos                 |
+| upload (cretae)               | --                    | Nuevo                 | --                    |
+| update / partial update       | --                    | Propios N.A.          | --                    |
+| destroy                       | --                    | Propios N.A.          | --                    |
+| get cover image               | Todos N.A.            | Todos N.A.            | Todos                 |
+| get non-cover images          | Todos N.A.            | Todos N.A.            | Todos                 |
+| set as cover                  | --                    | Propios N.A.          | --                    |
+
+
 
 ## RoomType
 
 | Método                        | Customer              | HotelOwner            | AppAdmin              |
 |-------------------------------|-----------------------|-----------------------|-----------------------|
-| list                          | --                    | Todos N.A.            | Todos                 |
+| list                          | Todos N.A.            | Todos N.A.            | Todos                 |
 | retrieve                      | Todos N.A.            | Todos N.A.            | Todos                 |
 | create                        | --                    | Nuevo                 | --                    |
 | update / partial update       | --                    | Propios N.A.          | --                    |
