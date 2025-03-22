@@ -74,7 +74,7 @@ Si nadie puede, poner un forbidden directamente en el controlador (no borrar el 
 | destroy                       | --                    | Él mismo *            | --                    |
 | get all hotels of owner explicit | --                 | Él mismo, N.A.        | Todos                 |
 | get all hotels of owner implicit | --                 | Él mismo, N.A.        | --                    |
-| delete all hotels of owner explicit    | --           | Él mismo, N.A. *      | Todos                 |
+| delete all hotels of owner explicit    | --           | Él mismo, N.A. *      | --                    |
 | delete all hotels of owner explicit    | --           | Él mismo, N.A. *      | --                    |
 | get current                   | --                    | Él mismo              | --                    |
 
@@ -89,6 +89,7 @@ Si nadie puede, poner un forbidden directamente en el controlador (no borrar el 
 | create                        | --                    | Nuevo                 | --                    |
 | update / partial update       | --                    | Propios N.A.          | --                    |
 | destroy                       | --                    | Propios N.A.          | --                    |
+| list available with filters   | Todos N.A.            | Todos N.A.            | --                    |
 | get all room types of hotel   | Todos N.A.            | Todos N.A.            | Todos                 |
 | get bookings of hotel         | --                    | Propios N.A.          | Todos                 |
 
@@ -103,5 +104,5 @@ Si nadie puede, poner un forbidden directamente en el controlador (no borrar el 
 | create                        | --                    | Nuevo                 | --                    |
 | update / partial update       | --                    | Propios N.A.          | --                    |
 | destroy                       | --                    | Propios N.A.  *       | --                    |
-| list available with filters   | Todos N.A.            | --                    | --                    |
+| list available with filters   | Todos N.A.            | Todos N.A.            | --                    |
 
