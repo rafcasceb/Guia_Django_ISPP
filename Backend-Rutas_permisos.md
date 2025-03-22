@@ -1,6 +1,6 @@
 
 ## Notas
-N.A. = No archivados
+`N.A.` = No archivados
 
 `*` = Comprobar bookings asociadas recientes y si sí, archivar en vez de borrar
 
