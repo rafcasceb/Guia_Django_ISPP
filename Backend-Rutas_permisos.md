@@ -105,4 +105,6 @@ Si nadie puede, poner un forbidden directamente en el controlador (no borrar el 
 | update / partial update       | --                    | Propios N.A.          | --                    |
 | destroy                       | --                    | Propios N.A.  *       | --                    |
 | list available with filters   | Todos N.A.            | Todos N.A.            | --                    |
+| is available                  | Todos N.A.            | Todos N.A.            | Todos                 |
+| get hotel of room type        | Todos N.A.            | Todos N.A.            | Todos                 |
 
